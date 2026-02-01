@@ -34,7 +34,7 @@ onMounted(() => {
     recognition.continuous = true;
     recognition.interimResults = true;
 
-    // ALERTA: Aquí está el cambio. Guardamos en variable interna, NO en el input.
+    // ALERTA: Guardamos en variable interna, NO en el input.
     recognition.onresult = (event: any) => {
       const transcript = Array.from(event.results)
         .map((result: any) => result[0])
@@ -55,6 +55,7 @@ onMounted(() => {
 
 // --- LÓGICA PUSH-TO-TALK (INVISIBLE) ---
 const empezarAEscuchar = () => {
+  // Bloqueo adicional por si el botón no se deshabilitó visualmente rápido
   if (!recognition || estaHablando.value) return;
   
   textoVozCapturado = ''; // Limpiamos la memoria de voz
@@ -78,7 +79,6 @@ const detenerEscucha = () => {
 };
 
 // --- LÓGICA DE CONEXIÓN (MODIFICADA PARA ACEPTAR ARGUMENTO) ---
-// Ahora acepta un parámetro opcional 'textoDirecto'
 const enviarPregunta = async (textoDirecto?: string) => {
   
   // Prioridad: 1. Texto de Voz (si existe) | 2. Texto del Input manual
@@ -86,6 +86,7 @@ const enviarPregunta = async (textoDirecto?: string) => {
 
   if (!mensajeAEnviar.trim()) return;
 
+  // Si por alguna razón sigue hablando, lo callamos (seguridad)
   if (synth.speaking) synth.cancel();
 
   cargando.value = true;
@@ -97,7 +98,7 @@ const enviarPregunta = async (textoDirecto?: string) => {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         sender: "tesis_user_01", 
-        message: mensajeAEnviar // Enviamos el mensaje calculado
+        message: mensajeAEnviar
       })
     });
 
@@ -131,8 +132,14 @@ const hablarTextoReal = (texto: string) => {
   const voz = vocesDisponibles.find(v => v.lang.includes('es')) || vocesDisponibles[0];
   if (voz) utterance.voice = voz;
   utterance.rate = 1.0; 
+  
+  // AL INICIO: Bloqueamos UI
   utterance.onstart = () => { estaHablando.value = true; };
+  
+  // AL FINAL: Desbloqueamos UI
   utterance.onend = () => { estaHablando.value = false; };
+  utterance.onerror = () => { estaHablando.value = false; };
+  
   synth.speak(utterance);
 };
 </script>
@@ -145,7 +152,7 @@ const hablarTextoReal = (texto: string) => {
       <div class="bg-gray-800/90 p-4 rounded-xl shadow-2xl border border-gray-700 backdrop-blur-sm">
         <div class="flex flex-col gap-3">
           <label class="text-blue-400 text-xs font-bold uppercase tracking-wider">
-            Consultas: Carrera de Software
+            Consultas: Carrera de Ciencias en la Computación
           </label>
           
           <div class="flex gap-2 items-stretch">
@@ -154,9 +161,9 @@ const hablarTextoReal = (texto: string) => {
               type="text" 
               v-model="preguntaUsuario"
               @keyup.enter="() => enviarPregunta()"
-              :disabled="cargando || estaEscuchando"
-              :placeholder="estaEscuchando ? 'Escuchando... (suelta para enviar)' : 'Escribe tu pregunta...'"
-              class="flex-1 px-3 py-2 bg-gray-700 text-white text-sm border border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder-gray-400 transition-all"
+              :disabled="cargando || estaEscuchando || estaHablando"
+              :placeholder="estaEscuchando ? 'Escuchando... (suelta para enviar)' : (estaHablando ? 'Avatar hablando...' : 'Escribe tu pregunta...')"
+              class="flex-1 px-3 py-2 bg-gray-700 text-white text-sm border border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder-gray-400 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
             />
             
             <button 
@@ -164,9 +171,9 @@ const hablarTextoReal = (texto: string) => {
               @mouseup="detenerEscucha"
               @touchstart.prevent="empezarAEscuchar"
               @touchend.prevent="detenerEscucha"
-              :disabled="cargando"
+              :disabled="cargando || estaHablando"
               :class="[
-                'px-3 rounded-lg transition-all flex items-center justify-center shadow-lg',
+                'px-3 rounded-lg transition-all flex items-center justify-center shadow-lg disabled:opacity-50 disabled:cursor-not-allowed',
                 estaEscuchando ? 'bg-red-500 animate-pulse ring-2 ring-red-400' : 'bg-gray-600 hover:bg-gray-500'
               ]"
               title="Mantener presionado para hablar"
@@ -178,8 +185,8 @@ const hablarTextoReal = (texto: string) => {
 
             <button 
               @click="() => enviarPregunta()"
-              :disabled="cargando || estaEscuchando"
-              class="px-3 bg-blue-600 text-white rounded-lg hover:bg-blue-500 disabled:opacity-50 transition-colors shadow-lg"
+              :disabled="cargando || estaEscuchando || estaHablando"
+              class="px-3 bg-blue-600 text-white rounded-lg hover:bg-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-lg"
             >
               <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
