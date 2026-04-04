@@ -1,6 +1,7 @@
 // src/router/index.ts
 import { createRouter, createWebHistory } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
+import { hayTokenGuardado } from '@/services/authService'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -26,7 +27,7 @@ const router = createRouter({
       children: [
         {
           path: '',
-          redirect: { name: 'admin-documents' },   // /admin → documentos directo
+          redirect: { name: 'admin-documents' },
         },
         {
           path: 'documents',
@@ -57,11 +58,13 @@ const router = createRouter({
 router.beforeEach((to) => {
   const authStore = useAuthStore()
 
-  if (to.meta.requiresAuth && !authStore.isLoggedIn) {
+  const autenticado = authStore.isLoggedIn || hayTokenGuardado()
+
+  if (to.meta.requiresAuth && !autenticado) {
     return { name: 'login' }
   }
 
-  if (to.name === 'login' && authStore.isLoggedIn) {
+  if (to.name === 'login' && autenticado) {
     return { name: 'admin-documents' }
   }
 })

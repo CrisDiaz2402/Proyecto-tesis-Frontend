@@ -1,8 +1,5 @@
-<!-- src/views/UsersView.vue -->
 <template>
   <div class="p-8">
-
-    <!-- Cabecera -->
     <div class="flex items-center justify-between mb-8">
       <div>
         <h1 class="text-2xl font-bold text-white">Administradores</h1>
@@ -17,7 +14,6 @@
       </button>
     </div>
 
-    <!-- Tabla -->
     <div class="bg-gray-800 border border-gray-700 rounded-xl overflow-hidden">
       <div class="px-6 py-4 border-b border-gray-700 flex items-center gap-2">
         <Icon icon="mdi:account-group-outline" class="text-blue-400 text-lg" />
@@ -28,52 +24,49 @@
       </div>
 
       <div class="overflow-x-auto">
-        <table class="w-full text-sm">
+        <table class="w-full text-left border-collapse">
           <thead>
-            <tr class="text-xs text-gray-500 uppercase tracking-wider border-b border-gray-700">
-              <th class="text-left px-6 py-3">Usuario / Correo</th>
-              <th class="text-left px-6 py-3">Rol</th>
-              <th class="text-left px-6 py-3">Fecha creación</th>
-              <th class="text-center px-6 py-3">Acciones</th>
+            <tr class="bg-gray-900/50">
+              <th class="px-6 py-4 text-xs font-bold text-gray-400 uppercase tracking-wider">Usuario</th>
+              <th class="px-6 py-4 text-xs font-bold text-gray-400 uppercase tracking-wider">Rol</th>
+              <th class="px-6 py-4 text-xs font-bold text-gray-400 uppercase tracking-wider">Fecha Creación</th>
+              <th class="px-6 py-4 text-xs font-bold text-gray-400 uppercase tracking-wider text-right">Acciones</th>
             </tr>
           </thead>
-          <tbody>
-            <tr
-              v-for="user in usuarios"
-              :key="user.id"
-              class="border-b border-gray-700/50 hover:bg-gray-700/30 transition-colors"
-            >
+          <tbody class="divide-y divide-gray-700">
+            <tr v-for="user in usuarios" :key="user.id" class="hover:bg-gray-700/30 transition-colors group">
               <td class="px-6 py-4">
                 <div class="flex items-center gap-3">
-                  <div class="w-8 h-8 bg-blue-600/20 rounded-full flex items-center justify-center shrink-0">
-                    <Icon icon="mdi:account-outline" class="text-blue-400 text-base" />
+                  <div class="w-8 h-8 rounded-full bg-gradient-to-tr from-blue-600 to-indigo-600 flex items-center justify-center text-xs font-bold text-white uppercase">
+                    {{ user.username.charAt(0) }}
                   </div>
-                  <span class="text-gray-200 font-medium">{{ user.username }}</span>
+                  <span class="text-sm font-medium text-gray-200">{{ user.username }}</span>
                 </div>
               </td>
               <td class="px-6 py-4">
-                <span class="px-2 py-0.5 rounded text-xs font-bold bg-purple-600/20 text-purple-400 border border-purple-600/30">
+                <span class="px-2 py-1 bg-blue-500/10 text-blue-400 text-[10px] font-bold uppercase rounded-md border border-blue-500/20">
                   {{ user.rol }}
                 </span>
               </td>
-              <td class="px-6 py-4 text-gray-400 whitespace-nowrap">{{ user.fechaCreacion }}</td>
-              <td class="px-6 py-4">
-                <div class="flex items-center justify-center gap-2">
-                  <button
-                    @click="abrirModalEditar(user)"
-                    class="flex items-center gap-1.5 px-3 py-1.5 bg-blue-600/20 hover:bg-blue-600/40 text-blue-400 text-xs rounded-lg transition-colors"
+              <td class="px-6 py-4 text-sm text-gray-400">
+                {{ new Date(user.fecha_creacion).toLocaleDateString() }}
+              </td>
+              <td class="px-6 py-4 text-right">
+                <div class="flex justify-end gap-2">
+                  <button 
+                    @click="abrirModalEdicion(user)"
+                    class="p-2 text-gray-400 hover:text-blue-400 hover:bg-blue-400/10 rounded-lg transition-all"
+                    title="Editar"
                   >
-                    <Icon icon="mdi:pencil-outline" class="text-sm" />
-                    Editar
+                    <Icon icon="mdi:pencil-outline" class="text-lg" />
                   </button>
-                  <button
-                    @click="eliminar(user)"
+                  <button 
+                    @click="confirmarEliminacion(user)"
                     :disabled="user.username === authStore.username"
-                    class="flex items-center gap-1.5 px-3 py-1.5 bg-red-600/20 hover:bg-red-600/40 text-red-400 text-xs rounded-lg transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-                    title="No puedes eliminar tu propio usuario"
+                    class="p-2 text-gray-400 hover:text-red-400 hover:bg-red-400/10 rounded-lg transition-all disabled:opacity-20 disabled:cursor-not-allowed"
+                    title="Eliminar"
                   >
-                    <Icon icon="mdi:trash-can-outline" class="text-sm" />
-                    Eliminar
+                    <Icon icon="mdi:trash-can-outline" class="text-lg" />
                   </button>
                 </div>
               </td>
@@ -83,146 +76,148 @@
       </div>
     </div>
 
-    <!-- Modal crear / editar -->
-    <div
-      v-if="modalAbierto"
-      class="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 px-4"
-      @click.self="cerrarModal"
-    >
-      <div class="bg-gray-800 border border-gray-700 rounded-2xl p-6 w-full max-w-md shadow-2xl">
+    <div v-if="modalAbierto" class="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+      <div class="bg-gray-800 border border-gray-700 rounded-2xl p-8 w-full max-w-md shadow-2xl">
+        <h2 class="text-xl font-bold text-white mb-6 flex items-center gap-2">
+          <Icon :icon="modoEdicion ? 'mdi:account-edit' : 'mdi:account-plus'" class="text-blue-500" />
+          {{ modoEdicion ? 'Editar administrador' : 'Nuevo administrador' }}
+        </h2>
 
-        <div class="flex items-center justify-between mb-5">
-          <h3 class="text-lg font-semibold text-white">
-            {{ modoEdicion ? 'Editar usuario' : 'Nuevo usuario' }}
-          </h3>
-          <button @click="cerrarModal" class="text-gray-500 hover:text-gray-300 transition-colors">
-            <Icon icon="mdi:close" class="text-xl" />
-          </button>
-        </div>
-
-        <div class="flex flex-col gap-4">
-
-          <!-- Username -->
-          <div class="flex flex-col gap-1.5">
-            <label class="text-xs text-gray-400 uppercase tracking-wider">Usuario / Correo</label>
-            <div class="relative">
-              <Icon icon="mdi:account-outline" class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 text-lg" />
-              <input
-                v-model="form.username"
-                type="text"
-                placeholder="usuario@epn.edu.ec"
-                class="w-full pl-10 pr-4 py-2.5 bg-gray-700 text-white text-sm border border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder-gray-500 transition-all"
-              />
-            </div>
+        <form @submit.prevent="guardar" class="space-y-5">
+          <div>
+            <label class="block text-xs font-semibold text-gray-400 uppercase mb-2">Nombre de usuario</label>
+            <input 
+              v-model="form.username"
+              type="text"
+              class="w-full bg-gray-900 border border-gray-700 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:border-blue-500 transition-colors"
+              placeholder="Ej: admin_central"
+            />
           </div>
 
-          <!-- Password -->
-          <div class="flex flex-col gap-1.5">
-            <label class="text-xs text-gray-400 uppercase tracking-wider">
-              Contraseña {{ modoEdicion ? '(dejar vacío para no cambiar)' : '' }}
+          <div>
+            <label class="block text-xs font-semibold text-gray-400 uppercase mb-2">
+              {{ modoEdicion ? 'Nueva contraseña (dejar vacío para mantener)' : 'Contraseña' }}
             </label>
             <div class="relative">
-              <Icon icon="mdi:lock-outline" class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 text-lg" />
-              <input
+              <input 
                 v-model="form.password"
                 :type="verPassword ? 'text' : 'password'"
+                class="w-full bg-gray-900 border border-gray-700 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:border-blue-500 transition-colors"
                 placeholder="••••••••"
-                class="w-full pl-10 pr-10 py-2.5 bg-gray-700 text-white text-sm border border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder-gray-500 transition-all"
               />
-              <button
+              <button 
                 type="button"
                 @click="verPassword = !verPassword"
-                class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-300 transition-colors"
+                class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-300"
               >
-                <Icon :icon="verPassword ? 'mdi:eye-off-outline' : 'mdi:eye-outline'" class="text-lg" />
+                <Icon :icon="verPassword ? 'mdi:eye-off' : 'mdi:eye'" class="text-xl" />
               </button>
             </div>
           </div>
 
-          <!-- Error -->
-          <p v-if="errorModal" class="text-red-400 text-xs flex items-center gap-1.5">
-            <Icon icon="mdi:alert-circle-outline" />
+          <div v-if="errorModal" class="p-3 bg-red-500/10 border border-red-500/20 rounded-lg flex items-center gap-2 text-red-400 text-sm">
+            <Icon icon="mdi:alert-circle" />
             {{ errorModal }}
-          </p>
+          </div>
 
-          <!-- Botones -->
-          <div class="flex gap-3 mt-2">
-            <button
-              @click="cerrarModal"
-              class="flex-1 py-2.5 bg-gray-700 hover:bg-gray-600 text-gray-300 text-sm rounded-lg transition-colors"
+          <div class="flex gap-3 pt-4">
+            <button 
+              type="button"
+              @click="cerrarModal" 
+              class="flex-1 py-2.5 bg-gray-700 hover:bg-gray-600 text-gray-300 font-semibold rounded-lg transition-colors"
             >
               Cancelar
             </button>
-            <button
-              @click="guardar"
-              class="flex-1 py-2.5 bg-blue-600 hover:bg-blue-500 text-white text-sm font-semibold rounded-lg transition-colors"
+            <button 
+              type="submit"
+              :disabled="procesandoForm"
+              class="flex-1 py-2.5 bg-blue-600 hover:bg-blue-500 text-white font-semibold rounded-lg transition-colors flex justify-center items-center gap-2"
             >
-              {{ modoEdicion ? 'Guardar cambios' : 'Crear usuario' }}
+              <Icon v-if="procesandoForm" icon="mdi:loading" class="animate-spin" />
+              {{ modoEdicion ? 'Actualizar' : 'Guardar' }}
             </button>
           </div>
-
-        </div>
+        </form>
       </div>
     </div>
 
+    <AppConfirmModal
+      :isOpen="confirmModal.show"
+      title="Eliminar administrador"
+      :message="`¿Estás seguro de que deseas eliminar al usuario '${confirmModal.user?.username}'? Esta acción es irreversible.`"
+      confirmText="Eliminar permanentemente"
+      :isLoading="confirmModal.loading"
+      isDestructive
+      @confirm="ejecutarEliminacion"
+      @cancel="cerrarModalConfirmacion"
+    />
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, onMounted, reactive } from 'vue'
 import { Icon } from '@iconify/vue'
+import { toast } from 'vue3-toastify'
 import { useAuthStore } from '@/stores/auth'
+import AppConfirmModal from '@/components/ui/AppConfirmModal.vue'
+import { 
+  obtenerUsuarios, 
+  crearUsuario, 
+  actualizarUsuario, 
+  eliminarUsuario,
+  type Usuario 
+} from '@/services/backendService'
 
 const authStore = useAuthStore()
 
-// ── Tipos ─────────────────────────────────────────────────────────────────────
-interface AdminUser {
-  id: number
-  username: string
-  rol: string
-  fechaCreacion: string
+// ── Estado de la Tabla ──
+const usuarios = ref<Usuario[]>([])
+
+// ── Estado del Modal de Formulario (Crear/Editar) ──
+const modalAbierto    = ref(false)
+const modoEdicion     = ref(false)
+const usuarioEditando = ref<Usuario | null>(null)
+const errorModal      = ref('')
+const verPassword     = ref(false)
+const procesandoForm  = ref(false)
+
+const form = ref({
+  username: '',
+  password: ''
+})
+
+// ── Estado del Modal de Confirmación ──
+const confirmModal = reactive({
+  show: false,
+  loading: false,
+  user: null as Usuario | null
+})
+
+// ── Carga de Datos ──
+const cargarUsuarios = async () => {
+  try {
+    usuarios.value = await obtenerUsuarios()
+  } catch (e: any) {
+    toast.error("Error al conectar con el servidor.")
+  }
 }
 
-// ── Datos temporales (conectar a backendService cuando exista POST /auth/users) ──
-const usuarios = ref<AdminUser[]>([
-  {
-    id: 1,
-    username: 'admin@epn.edu.ec',
-    rol: 'Admin',
-    fechaCreacion: '2026-01-23',
-  },
-  {
-    id: 2,
-    username: 'admin',
-    rol: 'Admin',
-    fechaCreacion: '2026-01-23',
-  },
-])
+onMounted(cargarUsuarios)
 
-// ── Modal ─────────────────────────────────────────────────────────────────────
-const modalAbierto  = ref(false)
-const modoEdicion   = ref(false)
-const verPassword   = ref(false)
-const errorModal    = ref('')
-const usuarioEditando = ref<AdminUser | null>(null)
-
-const form = ref({ username: '', password: '' })
-
+// ── Lógica de Formulario ──
 const abrirModalCrear = () => {
   modoEdicion.value     = false
   usuarioEditando.value = null
   form.value            = { username: '', password: '' }
   errorModal.value      = ''
-  verPassword.value     = false
   modalAbierto.value    = true
 }
 
-const abrirModalEditar = (user: AdminUser) => {
+const abrirModalEdicion = (user: Usuario) => {
   modoEdicion.value     = true
   usuarioEditando.value = user
   form.value            = { username: user.username, password: '' }
   errorModal.value      = ''
-  verPassword.value     = false
   modalAbierto.value    = true
 }
 
@@ -230,11 +225,11 @@ const cerrarModal = () => {
   modalAbierto.value = false
 }
 
-const guardar = () => {
+const guardar = async () => {
   errorModal.value = ''
 
   if (!form.value.username.trim()) {
-    errorModal.value = 'El usuario no puede estar vacío.'
+    errorModal.value = 'El nombre de usuario es requerido.'
     return
   }
   if (!modoEdicion.value && !form.value.password.trim()) {
@@ -242,27 +237,56 @@ const guardar = () => {
     return
   }
 
-  if (modoEdicion.value && usuarioEditando.value) {
-    // TODO: conectar con backendService.actualizarUsuario() cuando exista
-    const idx = usuarios.value.findIndex(u => u.id === usuarioEditando.value!.id)
-    if (idx !== -1) usuarios.value[idx].username = form.value.username
-  } else {
-    // TODO: conectar con backendService.crearUsuario() cuando exista
-    usuarios.value.push({
-      id:            Date.now(),
-      username:      form.value.username,
-      rol:           'Admin',
-      fechaCreacion: new Date().toISOString().split('T')[0],
-    })
-  }
+  procesandoForm.value = true
+  try {
+    const payload: any = { username: form.value.username }
+    if (form.value.password.trim()) payload.password = form.value.password
 
-  cerrarModal()
+    if (modoEdicion.value && usuarioEditando.value) {
+      await actualizarUsuario(usuarioEditando.value.id, payload)
+      toast.success('Usuario actualizado correctamente')
+    } else {
+      payload.rol = 'Admin'
+      await crearUsuario(payload)
+      toast.success('Usuario creado exitosamente')
+    }
+    
+    await cargarUsuarios()
+    cerrarModal()
+  } catch (e: any) {
+    errorModal.value = e.message
+  } finally {
+    procesandoForm.value = false
+  }
 }
 
-const eliminar = (user: AdminUser) => {
-  if (user.username === authStore.username) return
-  if (!confirm(`¿Eliminar al usuario "${user.username}"?`)) return
-  // TODO: conectar con backendService.eliminarUsuario() cuando exista
-  usuarios.value = usuarios.value.filter(u => u.id !== user.id)
+// ── Lógica de Eliminación con el nuevo Modal ──
+const confirmarEliminacion = (user: Usuario) => {
+  confirmModal.user = user
+  confirmModal.show = true
+}
+
+const cerrarModalConfirmacion = () => {
+  if (!confirmModal.loading) {
+    confirmModal.show = false
+    confirmModal.user = null
+  }
+}
+
+const ejecutarEliminacion = async () => {
+  if (!confirmModal.user) return
+
+  confirmModal.loading = true
+  try {
+    await eliminarUsuario(confirmModal.user.id)
+    toast.success('Usuario eliminado permanentemente')
+    await cargarUsuarios()
+    confirmModal.show = false
+  } catch (e: any) {
+    toast.error(`Error: ${e.message}`)
+  } finally {
+    confirmModal.loading = false
+    confirmModal.user = null
+  }
 }
 </script>
