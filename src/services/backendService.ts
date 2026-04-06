@@ -7,7 +7,13 @@ export interface Documento {
   nombre_archivo: string
   subido_por: string
   fecha_subida: string
-  estado: string
+
+  // ── CAMPOS DUALES ──
+  procesado_local: boolean
+  procesado_cloud: boolean
+  estado_local: string
+  estado_cloud: string
+
   cargando?: boolean
 }
 
@@ -34,6 +40,48 @@ export interface Usuario {
   fecha_creacion: string
 }
 
+// ── Tipos de motores ──────────────────────────────────────────────────────────
+// MotorTipo: para subir/eliminar documentos (solo local o cloud)
+// MotorScope: para acciones globales de caché/vectores (puede afectar a ambos)
+export type MotorTipo  = 'local' | 'cloud'
+export type MotorScope = 'local' | 'cloud' | 'all'
+
+export interface ConfiguracionIA {
+  motor_vectores: MotorTipo
+  motor_llm: MotorTipo
+}
+
+// Las 3 combinaciones válidas (cloud:local eliminado — incompatibilidad estructural)
+export const MODOS_IA = [
+  {
+    id: 'local:local',
+    motor_vectores: 'local'  as MotorTipo,
+    motor_llm:      'local'  as MotorTipo,
+    label:          'Todo Local',
+    descripcion:    'Vectores Ollama + LLM Llama 3.1. Máxima privacidad, sin internet.',
+    icono:          'mdi:server-network',
+    color:          'blue',
+  },
+  {
+    id: 'cloud:cloud',
+    motor_vectores: 'cloud'  as MotorTipo,
+    motor_llm:      'cloud'  as MotorTipo,
+    label:          'Todo Nube',
+    descripcion:    'Vectores Gemini Embedding + LLM Gemini Flash. Máximo rendimiento.',
+    icono:          'mdi:cloud-outline',
+    color:          'emerald',
+  },
+  {
+    id: 'local:cloud',
+    motor_vectores: 'local'  as MotorTipo,
+    motor_llm:      'cloud'  as MotorTipo,
+    label:          'Vectores Local + LLM Nube',
+    descripcion:    'Busca en vectores Ollama locales, pero responde con Gemini Flash.',
+    icono:          'mdi:server-network',
+    color:          'violet',
+  },
+]
+
 // ─── PÚBLICOS (no requieren token) ────────────────────────────────────────────
 
 export async function healthCheck(): Promise<boolean> {
@@ -45,6 +93,7 @@ export async function healthCheck(): Promise<boolean> {
   }
 }
 
+// El Avatar consulta de forma transparente. El backend decide el motor.
 export async function consultarRAG(pregunta: string): Promise<ChatResponse> {
   const res = await fetch(`${BACKEND_URL}/api/chat/consultar`, {
     method:  'POST',
@@ -53,6 +102,32 @@ export async function consultarRAG(pregunta: string): Promise<ChatResponse> {
   })
   if (!res.ok) {
     const err = await res.json().catch(() => ({ detail: 'Error al consultar IA' }))
+    throw new Error(err.detail ?? `HTTP ${res.status}`)
+  }
+  return res.json()
+}
+
+// ─── CONFIGURACIÓN IA (requieren token) ───────────────────────────────────────
+
+export async function obtenerConfiguracionIA(): Promise<ConfiguracionIA> {
+  const res = await fetch(`${BACKEND_URL}/api/config/motor`, {
+    headers: { ...getAuthHeaders() },
+  })
+  if (!res.ok) throw new Error(`HTTP ${res.status}`)
+  return res.json()
+}
+
+export async function actualizarConfiguracionIA(
+  motor_vectores: MotorTipo,
+  motor_llm: MotorTipo,
+): Promise<AccionGlobalResponse> {
+  const res = await fetch(`${BACKEND_URL}/api/config/motor`, {
+    method:  'PUT',
+    headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
+    body:    JSON.stringify({ motor_vectores, motor_llm }),
+  })
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ detail: 'Error al cambiar la configuración.' }))
     throw new Error(err.detail ?? `HTTP ${res.status}`)
   }
   return res.json()
@@ -68,13 +143,17 @@ export async function obtenerDocumentos(): Promise<Documento[]> {
   return res.json()
 }
 
-export async function subirDocumento(file: File): Promise<DocumentoUploadResponse> {
+export async function subirDocumento(
+  file: File,
+  motor: MotorTipo = 'local',
+): Promise<DocumentoUploadResponse> {
   const formData = new FormData()
   formData.append('file', file)
+  formData.append('motor', motor)
 
   const res = await fetch(`${BACKEND_URL}/api/documents/upload`, {
     method:  'POST',
-    headers: { ...getAuthHeaders() },  // ⚠️ NO poner Content-Type aquí: lo maneja el browser con el boundary del FormData
+    headers: { ...getAuthHeaders() },
     body:    formData,
   })
   if (!res.ok) {
@@ -84,8 +163,11 @@ export async function subirDocumento(file: File): Promise<DocumentoUploadRespons
   return res.json()
 }
 
-export async function eliminarDocumento(id: number): Promise<{ ok: boolean; mensaje: string }> {
-  const res = await fetch(`${BACKEND_URL}/api/documents/${id}`, {
+export async function eliminarDocumento(
+  id: number,
+  motor: MotorTipo = 'local',
+): Promise<{ ok: boolean; mensaje: string }> {
+  const res = await fetch(`${BACKEND_URL}/api/documents/${id}?motor=${motor}`, {
     method:  'DELETE',
     headers: { ...getAuthHeaders() },
   })
@@ -96,8 +178,12 @@ export async function eliminarDocumento(id: number): Promise<{ ok: boolean; mens
   return res.json()
 }
 
-export async function descargarDocumento(id: number, nombreArchivo: string): Promise<void> {
-  const res = await fetch(`${BACKEND_URL}/api/documents/${id}/download`, {
+export async function descargarDocumento(
+  id: number,
+  nombreArchivo: string,
+  motor: MotorTipo = 'local',
+): Promise<void> {
+  const res = await fetch(`${BACKEND_URL}/api/documents/${id}/download?motor=${motor}`, {
     method:  'GET',
     headers: { ...getAuthHeaders() },
   })
@@ -117,8 +203,18 @@ export async function descargarDocumento(id: number, nombreArchivo: string): Pro
   window.URL.revokeObjectURL(url)
 }
 
-export async function limpiarSoloCache(): Promise<AccionGlobalResponse> {
-  const res = await fetch(`${BACKEND_URL}/api/documents/cache/all`, {
+// ─────────────────────────────────────────────────────────────────────────────
+// ACCIONES GLOBALES DE CACHÉ
+//
+// motor: MotorScope
+//   "local" → limpia cache_ll (local:local) + cache_lc (local:cloud)
+//   "cloud" → limpia cache_cc (cloud:cloud)
+//   "all"   → limpia los 3 cachés
+// ─────────────────────────────────────────────────────────────────────────────
+export async function limpiarSoloCache(
+  motor: MotorScope = 'local',
+): Promise<AccionGlobalResponse> {
+  const res = await fetch(`${BACKEND_URL}/api/documents/cache/all?motor=${motor}`, {
     method:  'DELETE',
     headers: { ...getAuthHeaders() },
   })
@@ -129,8 +225,18 @@ export async function limpiarSoloCache(): Promise<AccionGlobalResponse> {
   return res.json()
 }
 
-export async function limpiarVectoresYCache(): Promise<AccionGlobalResponse> {
-  const res = await fetch(`${BACKEND_URL}/api/documents/vectors/all`, {
+// ─────────────────────────────────────────────────────────────────────────────
+// ACCIONES GLOBALES DE VECTORES + CACHÉ
+//
+// motor: MotorScope
+//   "local" → vectores local + cache_ll + cache_lc; BD actualizada
+//   "cloud" → vectores cloud + cache_cc; BD actualizada
+//   "all"   → todo lo anterior en ambos motores; BD actualizada
+// ─────────────────────────────────────────────────────────────────────────────
+export async function limpiarVectoresYCache(
+  motor: MotorScope = 'local',
+): Promise<AccionGlobalResponse> {
+  const res = await fetch(`${BACKEND_URL}/api/documents/vectors/all?motor=${motor}`, {
     method:  'DELETE',
     headers: { ...getAuthHeaders() },
   })
@@ -141,8 +247,10 @@ export async function limpiarVectoresYCache(): Promise<AccionGlobalResponse> {
   return res.json()
 }
 
-export async function procesarTodosLosDocumentos(): Promise<AccionGlobalResponse> {
-  const res = await fetch(`${BACKEND_URL}/api/documents/process/all`, {
+export async function procesarTodosLosDocumentos(
+  motor: MotorTipo = 'local',
+): Promise<AccionGlobalResponse> {
+  const res = await fetch(`${BACKEND_URL}/api/documents/process/all?motor=${motor}`, {
     method:  'POST',
     headers: { ...getAuthHeaders() },
   })

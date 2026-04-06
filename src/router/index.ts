@@ -44,6 +44,12 @@ const router = createRouter({
           name: 'admin-users',
           component: () => import('@/views/UsersView.vue'),
         },
+        // ── NUEVA RUTA: CONFIGURACIÓN IA ──
+        {
+          path: 'config',
+          name: 'admin-config',
+          component: () => import('@/views/ConfiguracionView.vue'),
+        },
       ],
     },
 

@@ -90,6 +90,8 @@ const authStore = useAuthStore()
 
 const navItems = [
   { to: '/admin/documents', label: 'Documentos', icon: 'mdi:file-document-outline' },
+  // ── NUEVO ITEM PARA LA CONFIGURACIÓN DEL CEREBRO ──
+  { to: '/admin/config',    label: 'Configuración IA', icon: 'mdi:brain' },
   { to: '/admin/metrics',   label: 'Métricas',   icon: 'mdi:chart-bar'             },
   { to: '/admin/users',     label: 'Usuarios',   icon: 'mdi:account-group-outline' },
 ]
