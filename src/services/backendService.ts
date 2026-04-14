@@ -41,8 +41,6 @@ export interface Usuario {
 }
 
 // ── Tipos de motores ──────────────────────────────────────────────────────────
-// MotorTipo: para subir/eliminar documentos (solo local o cloud)
-// MotorScope: para acciones globales de caché/vectores (puede afectar a ambos)
 export type MotorTipo  = 'local' | 'cloud'
 export type MotorScope = 'local' | 'cloud' | 'all'
 
@@ -82,6 +80,111 @@ export const MODOS_IA = [
   },
 ]
 
+// ─── TIPOS PARA PARÁMETROS RAG ────────────────────────────────────────────────
+
+/** Valores editables del sistema RAG — espejo del modelo de BD del backend */
+export interface RagParams {
+  // Alto impacto — Chunking
+  breakpoint_threshold_amount: number
+
+  // Alto impacto — Retrieval
+  umbral_relevancia_local: number
+  umbral_relevancia_cloud: number
+  rag_k_local: number
+  rag_k_cloud: number
+
+  // Medio impacto — Tokens
+  num_tokens_normal_local: number
+  num_tokens_lista_local: number
+  num_tokens_normal_cloud: number
+  num_tokens_lista_cloud: number
+
+  // Medio impacto — Caché L2
+  cache_threshold_ll: number
+  cache_threshold_lc: number
+  cache_threshold_cc: number
+  umbral_similitud: number
+
+  // Bajo impacto — LLM local
+  repeat_penalty: number
+  top_k_llm: number
+  top_p_llm: number
+  hyde_num_predict: number
+
+  // Bajo impacto — Caché L1
+  max_l1_entries: number
+}
+
+/** Límites de validación de un parámetro, tal como los devuelve el backend */
+export interface ParamLimit {
+  min: number
+  max: number
+  type: 'int' | 'float'
+  default: number
+  label: string
+  descripcion: string
+}
+
+/** Respuesta completa de GET /api/rag-params */
+export interface RagParamsResponse {
+  ok: boolean
+  parametros_actuales: RagParams & {
+    prompt_principal: string | null
+    prompt_hyde: string | null
+  }
+  defaults: RagParams
+  limites: Record<keyof RagParams, ParamLimit>
+  fecha_actualizacion: string | null
+  prompts_default_texto: {
+    prompt_principal: string
+    prompt_hyde: string
+  }
+}
+
+/** Respuesta de PUT /api/rag-params */
+export interface RagParamsUpdateResponse {
+  ok: boolean
+  mensaje: string
+  params_cambiados: string[]
+  params_sin_cambio: string[]
+  acciones_limpieza: string[]
+  advertencias: string[]
+  parametros_actuales: RagParams
+}
+
+/** Respuesta de POST /api/rag-params/reset */
+export interface RagParamsResetResponse {
+  ok: boolean
+  mensaje: string
+  params_reseteados: string[]
+  acciones_limpieza: string[]
+  advertencias: string[]
+  parametros_actuales: RagParams
+  defaults: RagParams
+}
+
+// ─── TIPOS PARA PROMPTS EDITABLES ─────────────────────────────────────────────
+
+/** Payload para actualizar uno o ambos prompts */
+export interface PromptsUpdatePayload {
+  prompt_principal?: string   // texto completo → guarda; "" → resetea al hardcodeado
+  prompt_hyde?: string        // texto completo → guarda; "" → resetea al hardcodeado
+}
+
+/** Respuesta de actualizar prompts (reutiliza el mismo PUT /api/rag-params) */
+export interface PromptsUpdateResponse {
+  ok: boolean
+  mensaje: string
+  params_cambiados: string[]
+  params_sin_cambio: string[]
+  acciones_limpieza: string[]
+  advertencias: string[]
+  parametros_actuales: RagParams & {
+    prompt_principal: string | null
+    prompt_hyde: string | null
+  }
+}
+
 // ─── PÚBLICOS (no requieren token) ────────────────────────────────────────────
 
 export async function healthCheck(): Promise<boolean> {
@@ -93,7 +196,6 @@ export async function healthCheck(): Promise<boolean> {
   }
 }
 
-// El Avatar consulta de forma transparente. El backend decide el motor.
 export async function consultarRAG(pregunta: string): Promise<ChatResponse> {
   const res = await fetch(`${BACKEND_URL}/api/chat/consultar`, {
     method:  'POST',
@@ -133,6 +235,79 @@ export async function actualizarConfiguracionIA(
   return res.json()
 }
 
+// ─── PARÁMETROS RAG (requieren token) ─────────────────────────────────────────
+
+/** Obtiene parámetros actuales + defaults + límites de validación + textos de prompts por defecto */
+export async function obtenerRagParams(): Promise<RagParamsResponse> {
+  const res = await fetch(`${BACKEND_URL}/api/rag-params`, {
+    headers: { ...getAuthHeaders() },
+  })
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ detail: 'Error al obtener parámetros RAG.' }))
+    throw new Error(err.detail ?? `HTTP ${res.status}`)
+  }
+  return res.json()
+}
+
+/** Actualiza uno o más parámetros RAG. El backend ejecuta la limpieza automática. */
+export async function actualizarRagParams(
+  params: Partial<RagParams>,
+): Promise<RagParamsUpdateResponse> {
+  const res = await fetch(`${BACKEND_URL}/api/rag-params`, {
+    method:  'PUT',
+    headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
+    body:    JSON.stringify(params),
+  })
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ detail: 'Error al guardar parámetros RAG.' }))
+    const detail = err.detail
+    if (typeof detail === 'object' && detail?.errores) {
+      throw new Error(detail.mensaje ?? 'Parámetros fuera de rango.')
+    }
+    throw new Error(typeof detail === 'string' ? detail : `HTTP ${res.status}`)
+  }
+  return res.json()
+}
+
+/** Restaura todos los parámetros RAG a sus valores por defecto */
+export async function resetearRagParams(): Promise<RagParamsResetResponse> {
+  const res = await fetch(`${BACKEND_URL}/api/rag-params/reset`, {
+    method:  'POST',
+    headers: { ...getAuthHeaders() },
+  })
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ detail: 'Error al restaurar parámetros RAG.' }))
+    throw new Error(err.detail ?? `HTTP ${res.status}`)
+  }
+  return res.json()
+}
+
+// ─── PROMPTS EDITABLES (requieren token) ──────────────────────────────────────
+
+/**
+ * Guarda uno o ambos prompts.
+ * - Texto completo → se persiste en BD y se usa en runtime.
+ * - Cadena vacía "" → borra el prompt de BD (vuelve al hardcodeado).
+ */
+export async function actualizarPrompts(
+  payload: PromptsUpdatePayload,
+): Promise<PromptsUpdateResponse> {
+  const res = await fetch(`${BACKEND_URL}/api/rag-params`, {
+    method:  'PUT',
+    headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
+    body:    JSON.stringify(payload),
+  })
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ detail: 'Error al guardar los prompts.' }))
+    const detail = err.detail
+    if (typeof detail === 'object' && detail?.errores) {
+      throw new Error(detail.mensaje ?? 'Prompt inválido.')
+    }
+    throw new Error(typeof detail === 'string' ? detail : `HTTP ${res.status}`)
+  }
+  return res.json()
+}
+
 // ─── DOCUMENTOS (requieren token) ─────────────────────────────────────────────
 
 export async function obtenerDocumentos(): Promise<Documento[]> {
@@ -143,131 +318,146 @@ export async function obtenerDocumentos(): Promise<Documento[]> {
   return res.json()
 }
 
-export async function subirDocumento(
-  file: File,
-  motor: MotorTipo = 'local',
-): Promise<DocumentoUploadResponse> {
+export async function subirDocumento(file: File, motor: MotorTipo): Promise<DocumentoUploadResponse> {
   const formData = new FormData()
   formData.append('file', file)
   formData.append('motor', motor)
-
   const res = await fetch(`${BACKEND_URL}/api/documents/upload`, {
     method:  'POST',
     headers: { ...getAuthHeaders() },
     body:    formData,
   })
   if (!res.ok) {
-    const err = await res.json().catch(() => ({ detail: 'Error desconocido' }))
+    const err = await res.json().catch(() => ({ detail: 'Error al subir el documento.' }))
     throw new Error(err.detail ?? `HTTP ${res.status}`)
   }
   return res.json()
 }
 
-export async function eliminarDocumento(
-  id: number,
-  motor: MotorTipo = 'local',
-): Promise<{ ok: boolean; mensaje: string }> {
+export async function eliminarDocumento(id: number, motor: MotorTipo): Promise<AccionGlobalResponse> {
   const res = await fetch(`${BACKEND_URL}/api/documents/${id}?motor=${motor}`, {
     method:  'DELETE',
     headers: { ...getAuthHeaders() },
   })
   if (!res.ok) {
-    const err = await res.json().catch(() => ({ detail: 'Error desconocido' }))
+    const err = await res.json().catch(() => ({ detail: 'Error al eliminar el documento.' }))
     throw new Error(err.detail ?? `HTTP ${res.status}`)
   }
   return res.json()
 }
 
-export async function descargarDocumento(
+export async function indexarDocumento(
   id: number,
-  nombreArchivo: string,
-  motor: MotorTipo = 'local',
-): Promise<void> {
-  const res = await fetch(`${BACKEND_URL}/api/documents/${id}/download?motor=${motor}`, {
-    method:  'GET',
+  scope: MotorScope,
+): Promise<AccionGlobalResponse> {
+  const res = await fetch(`${BACKEND_URL}/api/documents/${id}/indexar?scope=${scope}`, {
+    method:  'POST',
     headers: { ...getAuthHeaders() },
   })
   if (!res.ok) {
-    const err = await res.json().catch(() => ({ detail: 'Error al descargar el archivo' }))
+    const err = await res.json().catch(() => ({ detail: 'Error al indexar el documento.' }))
     throw new Error(err.detail ?? `HTTP ${res.status}`)
   }
+  return res.json()
+}
 
+export async function indexarTodos(scope: MotorScope): Promise<AccionGlobalResponse> {
+  const res = await fetch(`${BACKEND_URL}/api/documents/indexar-todos?scope=${scope}`, {
+    method:  'POST',
+    headers: { ...getAuthHeaders() },
+  })
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ detail: 'Error al indexar todos los documentos.' }))
+    throw new Error(err.detail ?? `HTTP ${res.status}`)
+  }
+  return res.json()
+}
+
+export async function formatearSistema(): Promise<AccionGlobalResponse> {
+  const res = await fetch(`${BACKEND_URL}/api/documents/formatear`, {
+    method:  'POST',
+    headers: { ...getAuthHeaders() },
+  })
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ detail: 'Error al formatear el sistema' }))
+    throw new Error(err.detail ?? `HTTP ${res.status}`)
+  }
+  return res.json()
+}
+
+/** Descarga el archivo físico original del documento desde el backend. */
+export async function descargarDocumento(
+  id: number,
+  nombreArchivo: string,
+  motor: MotorTipo,
+): Promise<void> {
+  const res = await fetch(`${BACKEND_URL}/api/documents/${id}/download?motor=${motor}`, {
+    headers: { ...getAuthHeaders() },
+  })
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ detail: 'Error al descargar el documento.' }))
+    throw new Error(err.detail ?? `HTTP ${res.status}`)
+  }
   const blob = await res.blob()
-  const url  = window.URL.createObjectURL(blob)
+  const url  = URL.createObjectURL(blob)
   const a    = document.createElement('a')
   a.href     = url
   a.download = nombreArchivo
   document.body.appendChild(a)
   a.click()
-  a.remove()
-  window.URL.revokeObjectURL(url)
+  document.body.removeChild(a)
+  URL.revokeObjectURL(url)
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// ACCIONES GLOBALES DE CACHÉ
-//
-// motor: MotorScope
-//   "local" → limpia cache_ll (local:local) + cache_lc (local:cloud)
-//   "cloud" → limpia cache_cc (cloud:cloud)
-//   "all"   → limpia los 3 cachés
-// ─────────────────────────────────────────────────────────────────────────────
-export async function limpiarSoloCache(
-  motor: MotorScope = 'local',
-): Promise<AccionGlobalResponse> {
+/** Limpia el caché semántico del motor indicado sin tocar vectores.
+ *  motor: 'local' → cache_ll + cache_lc | 'cloud' → cache_cc | 'all' → los 3
+ */
+export async function limpiarSoloCache(motor: MotorScope): Promise<AccionGlobalResponse> {
   const res = await fetch(`${BACKEND_URL}/api/documents/cache/all?motor=${motor}`, {
     method:  'DELETE',
     headers: { ...getAuthHeaders() },
   })
   if (!res.ok) {
-    const err = await res.json().catch(() => ({ detail: 'Error al limpiar caché' }))
+    const err = await res.json().catch(() => ({ detail: 'Error al limpiar caché.' }))
     throw new Error(err.detail ?? `HTTP ${res.status}`)
   }
   return res.json()
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// ACCIONES GLOBALES DE VECTORES + CACHÉ
-//
-// motor: MotorScope
-//   "local" → vectores local + cache_ll + cache_lc; BD actualizada
-//   "cloud" → vectores cloud + cache_cc; BD actualizada
-//   "all"   → todo lo anterior en ambos motores; BD actualizada
-// ─────────────────────────────────────────────────────────────────────────────
-export async function limpiarVectoresYCache(
-  motor: MotorScope = 'local',
-): Promise<AccionGlobalResponse> {
+/** Elimina vectores de ChromaDB + caché del motor indicado y actualiza estado en BD. */
+export async function limpiarVectoresYCache(motor: MotorScope): Promise<AccionGlobalResponse> {
   const res = await fetch(`${BACKEND_URL}/api/documents/vectors/all?motor=${motor}`, {
     method:  'DELETE',
     headers: { ...getAuthHeaders() },
   })
   if (!res.ok) {
-    const err = await res.json().catch(() => ({ detail: 'Error al limpiar vectores' }))
+    const err = await res.json().catch(() => ({ detail: 'Error al limpiar vectores y caché.' }))
     throw new Error(err.detail ?? `HTTP ${res.status}`)
   }
   return res.json()
 }
 
-export async function procesarTodosLosDocumentos(
-  motor: MotorTipo = 'local',
-): Promise<AccionGlobalResponse> {
+/** Re-vectoriza todos los documentos físicos del motor indicado. */
+export async function procesarTodosLosDocumentos(motor: MotorTipo): Promise<AccionGlobalResponse> {
   const res = await fetch(`${BACKEND_URL}/api/documents/process/all?motor=${motor}`, {
     method:  'POST',
     headers: { ...getAuthHeaders() },
   })
   if (!res.ok) {
-    const err = await res.json().catch(() => ({ detail: 'Error al sincronizar documentos' }))
+    const err = await res.json().catch(() => ({ detail: 'Error al procesar documentos.' }))
     throw new Error(err.detail ?? `HTTP ${res.status}`)
   }
   return res.json()
 }
 
+/** Elimina TODOS los documentos, vectores, archivos físicos y caché de ambos ecosistemas. */
 export async function eliminarTodosLosDocumentos(): Promise<AccionGlobalResponse> {
   const res = await fetch(`${BACKEND_URL}/api/documents/all/confirm`, {
     method:  'DELETE',
     headers: { ...getAuthHeaders() },
   })
   if (!res.ok) {
-    const err = await res.json().catch(() => ({ detail: 'Error al formatear el sistema' }))
+    const err = await res.json().catch(() => ({ detail: 'Error al eliminar todos los documentos.' }))
     throw new Error(err.detail ?? `HTTP ${res.status}`)
   }
   return res.json()
@@ -319,4 +509,245 @@ export async function eliminarUsuario(id: string): Promise<AccionGlobalResponse>
     throw new Error(err.detail ?? `HTTP ${res.status}`)
   }
   return res.json()
+}
+
+// ─── EVALUADOR RAG (requieren token) ──────────────────────────────────────────
+
+export type TipoCaso = 'contiene' | 'no_contiene' | 'corrige' | 'no_alucina'
+export type Veredicto = 'PASS' | 'PARCIAL' | 'FAIL'
+
+export interface CasoEvaluacion {
+  id: string
+  grupo: string
+  tipo: TipoCaso
+  pregunta: string
+  claves: string[]
+  claves_prohibidas: string[]
+  descripcion?: string
+  habilitado: boolean
+}
+
+export interface EjecucionRequest {
+  experimento: string
+  casos: CasoEvaluacion[]
+}
+
+export interface ResultadoCaso {
+  id: string
+  grupo: string
+  tipo: TipoCaso
+  pregunta: string
+  respuesta: string
+  latencia_ms: number
+  score: number        // 0.0 | 0.5 | 1.0
+  veredicto: Veredicto
+  detalle: string
+  descripcion?: string
+}
+
+export interface ResumenGrupo {
+  promedio: number
+  pass: number
+  parcial: number
+  fail: number
+  total: number
+}
+
+export interface MetricasPhoenix {
+  disponible: boolean
+  spans_analizados?: number
+  latencia_total_ms_avg?: number
+  latencia_llm_ms_avg?: number
+  latencia_retrieval_avg?: number
+  fragmentos_usados_avg?: number
+  k_retrieval?: number
+  umbral_relevancia?: number
+  hyde_aplicado?: boolean
+  modelo_llm?: string
+  modelo_embed?: string
+  nota?: string
+}
+
+export interface ConteoGlobal {
+  pass: number
+  parcial: number
+  fail: number
+  total: number
+}
+
+export interface ResultadoEvaluacion {
+  experimento: string
+  motor: string
+  timestamp: string
+  duracion_total_seg: number
+  resultados: ResultadoCaso[]
+  resumen_por_grupo: Record<string, ResumenGrupo>
+  score_global: number
+  conteo_global: ConteoGlobal
+  metricas_phoenix: MetricasPhoenix
+}
+
+// ── Tipos de eventos SSE ───────────────────────────────────────────────────────
+
+export interface EventoProgreso {
+  tipo: 'progreso'
+  caso_actual: number
+  total_casos: number
+  porcentaje: number       // 0–100, calculado por el backend
+  resultado: ResultadoCaso
+}
+
+export interface EventoCompletado {
+  tipo: 'completado'
+  caso_actual: number
+  total_casos: number
+  porcentaje: 100
+  reporte_final: ResultadoEvaluacion
+}
+
+export interface EventoError {
+  tipo: 'error'
+  mensaje_error: string
+}
+
+export type EventoEvaluacion = EventoProgreso | EventoCompletado | EventoError
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Verifica si Phoenix está online a través del proxy del backend.
+// NO contacta Phoenix directamente — eso genera error CORS en el navegador.
+// ─────────────────────────────────────────────────────────────────────────────
+export async function verificarPhoenixStatus(): Promise<boolean> {
+  try {
+    const res = await fetch(`${BACKEND_URL}/api/evaluacion/phoenix-status`, {
+      headers: { ...getAuthHeaders() },
+      signal: AbortSignal.timeout(4000),
+    })
+    if (!res.ok) return false
+    const data = await res.json()
+    return data.online === true
+  } catch {
+    return false
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Evaluación clásica síncrona — devuelve el reporte completo al terminar.
+// ─────────────────────────────────────────────────────────────────────────────
+export async function ejecutarEvaluacion(
+  request: EjecucionRequest,
+): Promise<ResultadoEvaluacion> {
+  const res = await fetch(`${BACKEND_URL}/api/evaluacion/ejecutar`, {
+    method:  'POST',
+    headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
+    body:    JSON.stringify(request),
+  })
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ detail: 'Error durante la evaluación.' }))
+    throw new Error(err.detail ?? `HTTP ${res.status}`)
+  }
+  return res.json()
+}
+// ─── MONITOR DE CONCURRENCIA (requiere token) ─────────────────────────────────
+
+export interface ConsultaActiva {
+  id: string
+  pregunta: string
+  motor: string
+  inicio: number
+}
+
+export interface RegistroHistorial {
+  id: string
+  pregunta: string
+  motor: string
+  inicio: number
+  fin: number
+  latencia_ms: number
+  cache: boolean
+}
+
+export interface EstadoMonitor {
+  activas: ConsultaActiva[]
+  total_activas: number
+  historial: RegistroHistorial[]
+  latencia_avg_ms: number
+  cache_hits: number
+  total_consultas: number
+  timestamp: number
+}
+
+export async function obtenerEstadoMonitor(): Promise<EstadoMonitor> {
+  const res = await fetch(`${BACKEND_URL}/api/monitor/estado`, {
+    headers: { ...getAuthHeaders() },
+  })
+  if (!res.ok) throw new Error(`HTTP ${res.status}`)
+  return res.json()
+}
+// ─────────────────────────────────────────────────────────────────────────────
+// Evaluación con SSE — llama al callback onEvento por cada evento recibido.
+// Retorna el ResultadoEvaluacion final cuando el stream termina.
+// ─────────────────────────────────────────────────────────────────────────────
+export async function ejecutarEvaluacionStream(
+  request: EjecucionRequest,
+  onEvento: (evento: EventoEvaluacion) => void,
+): Promise<ResultadoEvaluacion> {
+  const res = await fetch(`${BACKEND_URL}/api/evaluacion/ejecutar-stream`, {
+    method:  'POST',
+    headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
+    body:    JSON.stringify(request),
+  })
+
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ detail: 'Error durante la evaluación.' }))
+    throw new Error(err.detail ?? `HTTP ${res.status}`)
+  }
+
+  if (!res.body) throw new Error('El servidor no devolvió un stream.')
+
+  const reader  = res.body.getReader()
+  const decoder = new TextDecoder()
+  let buffer    = ''
+  let reporteFinal: ResultadoEvaluacion | null = null
+
+  while (true) {
+    const { done, value } = await reader.read()
+    if (done) break
+
+    buffer += decoder.decode(value, { stream: true })
+
+    // Cada evento SSE termina con "\n\n"
+    const partes = buffer.split('\n\n')
+    // El último elemento puede ser un fragmento incompleto — lo dejamos en buffer
+    buffer = partes.pop() ?? ''
+
+    for (const parte of partes) {
+      // Extraer el contenido después de "data: "
+      const linea = parte.trim()
+      if (!linea.startsWith('data:')) continue
+
+      const jsonStr = linea.slice('data:'.length).trim()
+      if (!jsonStr) continue
+
+      try {
+        const evento = JSON.parse(jsonStr) as EventoEvaluacion
+        onEvento(evento)
+
+        if (evento.tipo === 'completado') {
+          reporteFinal = evento.reporte_final
+        }
+        if (evento.tipo === 'error') {
+          throw new Error(evento.mensaje_error || 'Error desconocido en el stream.')
+        }
+      } catch (parseError) {
+        // Si el error es nuestro throw, re-lanzar
+        if (parseError instanceof Error && parseError.message !== 'Error al parsear SSE') {
+          throw parseError
+        }
+        console.warn('No se pudo parsear evento SSE:', jsonStr)
+      }
+    }
+  }
+
+  if (!reporteFinal) throw new Error('El stream terminó sin devolver el reporte final.')
+  return reporteFinal
 }

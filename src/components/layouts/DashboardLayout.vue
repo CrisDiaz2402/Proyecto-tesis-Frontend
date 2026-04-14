@@ -1,7 +1,7 @@
 <template>
-  <div class="min-h-screen bg-gray-900 flex">
+  <div class="h-screen bg-gray-900 flex overflow-hidden">
 
-    <aside class="w-64 bg-gray-800 border-r border-gray-700 flex flex-col shrink-0">
+    <aside class="w-64 bg-gray-800 border-r border-gray-700 flex flex-col shrink-0 overflow-y-auto">
 
       <div class="px-6 py-5 border-b border-gray-700 flex items-center gap-3">
         <div class="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center shrink-0">
@@ -89,11 +89,11 @@ const route     = useRoute()
 const authStore = useAuthStore()
 
 const navItems = [
-  { to: '/admin/documents', label: 'Documentos', icon: 'mdi:file-document-outline' },
-  // ── NUEVO ITEM PARA LA CONFIGURACIÓN DEL CEREBRO ──
-  { to: '/admin/config',    label: 'Configuración IA', icon: 'mdi:brain' },
-  { to: '/admin/metrics',   label: 'Métricas',   icon: 'mdi:chart-bar'             },
-  { to: '/admin/users',     label: 'Usuarios',   icon: 'mdi:account-group-outline' },
+  { to: '/admin/documents',  label: 'Documentos',        icon: 'mdi:file-document-outline'  },
+  { to: '/admin/config',     label: 'Configuración IA',  icon: 'mdi:brain'                  },
+  { to: '/admin/evaluacion', label: 'Evaluador RAG',     icon: 'mdi:test-tube'              },
+  { to: '/admin/monitor',    label: 'Monitor',           icon: 'mdi:monitor-eye'            }, // ← NUEVO
+  { to: '/admin/users',      label: 'Usuarios',          icon: 'mdi:account-group-outline'  },
 ]
 
 const isActive = (path: string) => route.path.startsWith(path)

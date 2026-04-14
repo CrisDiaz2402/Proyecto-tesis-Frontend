@@ -411,10 +411,15 @@ import { MAX_DOCUMENTOS, LIMITE_TAMANO_BYTES, LIMITE_TAMANO_MB, EXTENSIONES_PERM
 import { useAuthStore } from '@/stores/auth'
 import AppConfirmModal from '@/components/ui/AppConfirmModal.vue'
 import {
-  obtenerDocumentos, subirDocumento, eliminarDocumento, descargarDocumento,
-  limpiarSoloCache, limpiarVectoresYCache, procesarTodosLosDocumentos,
-  eliminarTodosLosDocumentos,
   type Documento, type MotorTipo, type MotorScope,
+  obtenerDocumentos,
+  subirDocumento,
+  eliminarDocumento,
+  descargarDocumento,
+  limpiarSoloCache,
+  limpiarVectoresYCache,
+  procesarTodosLosDocumentos,
+  eliminarTodosLosDocumentos,
 } from '@/services/backendService'
 
 const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000'

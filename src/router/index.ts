@@ -35,20 +35,26 @@ const router = createRouter({
           component: () => import('@/views/DocumentsView.vue'),
         },
         {
-          path: 'metrics',
-          name: 'admin-metrics',
-          component: () => import('@/views/MetricsView.vue'),
+          path: 'config',
+          name: 'admin-config',
+          component: () => import('@/views/ConfiguracionView.vue'),
+        },
+        // ── EVALUADOR RAG ──────────────────────────────────────────────────────
+        {
+          path: 'evaluacion',
+          name: 'admin-evaluacion',
+          component: () => import('@/views/EvaluacionView.vue'),
         },
         {
           path: 'users',
           name: 'admin-users',
           component: () => import('@/views/UsersView.vue'),
         },
-        // ── NUEVA RUTA: CONFIGURACIÓN IA ──
+        // ── MONITOR DE CONCURRENCIA ────────────────────────────────────────────
         {
-          path: 'config',
-          name: 'admin-config',
-          component: () => import('@/views/ConfiguracionView.vue'),
+          path: 'monitor',
+          name: 'admin-monitor',
+          component: () => import('@/views/MonitorView.vue'),
         },
       ],
     },
