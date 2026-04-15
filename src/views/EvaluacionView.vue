@@ -3,13 +3,10 @@
   Vista principal del Evaluador RAG.
   Orquesta las 2 secciones:
     A — BancoPreguntasSection (CRUD de casos + botón lanzar)
-    B — ReporteSection (resultados, gráficas, métricas Phoenix)
+    B — ReporteSection (resultados, gráficas)
 
-  Cambios respecto a la versión anterior:
-  - El ping a Phoenix se hace a través del proxy /api/evaluacion/phoenix-status
-    (el fetch directo a localhost:6006 era bloqueado por CORS).
-  - La evaluación usa ejecutarEvaluacionStream (SSE) en lugar de la llamada
-    síncrona, lo que permite mostrar un porcentaje real de avance caso a caso.
+  La evaluación usa ejecutarEvaluacionStream (SSE) en lugar de la llamada
+  síncrona, lo que permite mostrar un porcentaje real de avance caso a caso.
 -->
 <template>
   <div class="p-6 flex flex-col gap-6 max-w-5xl mx-auto">
@@ -23,19 +20,12 @@
         </p>
       </div>
 
-      <!-- Badges de estado del sistema -->
+      <!-- Badge de estado del sistema -->
       <div class="flex items-center gap-2 flex-wrap justify-end">
         <span class="flex items-center gap-1.5 px-2.5 py-1.5 bg-gray-800 border border-gray-700 rounded-lg text-xs">
           <span class="w-1.5 h-1.5 rounded-full" :class="motorActivo ? 'bg-green-500' : 'bg-gray-600'"></span>
           <span class="text-gray-400">Motor:</span>
           <span class="text-white font-mono font-semibold">{{ motorActivo || '—' }}</span>
-        </span>
-        <span class="flex items-center gap-1.5 px-2.5 py-1.5 bg-gray-800 border border-gray-700 rounded-lg text-xs">
-          <span class="w-1.5 h-1.5 rounded-full" :class="phoenixOk ? 'bg-orange-400' : 'bg-gray-600'"></span>
-          <span class="text-gray-400">Phoenix:</span>
-          <span :class="phoenixOk ? 'text-orange-300 font-semibold' : 'text-gray-500'">
-            {{ phoenixOk ? 'online' : 'offline' }}
-          </span>
         </span>
       </div>
     </div>
@@ -156,7 +146,6 @@ import { toast } from 'vue3-toastify'
 import {
   obtenerConfiguracionIA,
   ejecutarEvaluacionStream,
-  verificarPhoenixStatus,
 } from '@/services/backendService'
 import type {
   CasoEvaluacion,
@@ -170,7 +159,6 @@ import ReporteSection        from '@/components/evaluacion/Reporte/ReporteSectio
 // ── Estado ────────────────────────────────────────────────────────────────────
 
 const motorActivo     = ref('')
-const phoenixOk       = ref(false)
 const errorMotor      = ref('')
 const evaluando       = ref(false)
 const errorEvaluacion = ref('')
@@ -193,9 +181,6 @@ onMounted(async () => {
   } catch {
     errorMotor.value = 'No se pudo obtener el motor activo. Verifica que el backend esté corriendo.'
   }
-
-  // Ping a Phoenix a través del proxy del backend (sin CORS)
-  phoenixOk.value = await verificarPhoenixStatus()
 })
 
 // ── Lanzar evaluación ─────────────────────────────────────────────────────────

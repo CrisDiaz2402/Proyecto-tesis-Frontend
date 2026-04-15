@@ -1,7 +1,7 @@
 <!-- src/components/evaluacion/Reporte/ReporteSection.vue -->
 <!--
   Sección B del Evaluador RAG — Reporte completo.
-  Orquesta los 4 subcomponentes: Header, Gráficas, Tabla, Phoenix.
+  Orquesta los 3 subcomponentes: Header, Gráficas, Tabla.
   Se muestra con animación slide-down cuando llegan los resultados.
 -->
 <template>
@@ -32,7 +32,7 @@
         </div>
       </div>
 
-      <!-- Alerta si hay preguntas cacheadas (Phoenix no las traza) -->
+      <!-- Alerta si hay preguntas cacheadas -->
       <div
         v-if="alertaCaché"
         class="bg-yellow-500/10 border border-yellow-500/30 rounded-xl p-4 flex items-start gap-3"
@@ -41,7 +41,8 @@
         <div>
           <p class="text-yellow-300 text-sm font-semibold">Algunas respuestas vinieron del caché</p>
           <p class="text-yellow-400/70 text-xs mt-1 leading-relaxed">
-            Phoenix solo traza consultas procesadas por el LLM. {{ preguntasCacheadas }} pregunta{{ preguntasCacheadas !== 1 ? 's' : '' }} tuvieron latencia &lt; 500 ms (caché hit) y no generaron spans. Para métricas completas, limpia el caché desde Configuración IA antes de evaluar.
+            {{ preguntasCacheadas }} pregunta{{ preguntasCacheadas !== 1 ? 's' : '' }} tuvieron latencia &lt; 500 ms (caché hit). 
+            Para resultados más precisos, limpia el caché desde Configuración IA antes de evaluar.
           </p>
         </div>
       </div>
@@ -55,9 +56,6 @@
       <!-- 3. Tabla detallada -->
       <ReporteTabla :resultado="resultado" />
 
-      <!-- 4. Phoenix + guía de interpretación -->
-      <ReportePhoenix :phoenix="resultado.metricas_phoenix" />
-
     </div>
   </Transition>
 </template>
@@ -69,7 +67,6 @@ import type { ResultadoEvaluacion } from '@/services/backendService'
 import ReporteHeader   from './ReporteHeader.vue'
 import ReporteGraficas from './ReporteGraficas.vue'
 import ReporteTabla    from './ReporteTabla.vue'
-import ReportePhoenix  from './ReportePhoenix.vue'
 import { exportarHTML, exportarCSV } from '@/services/exportService'
 
 const props = defineProps<{
@@ -83,8 +80,7 @@ const preguntasCacheadas = computed(() =>
 )
 
 const alertaCaché = computed(() =>
-  preguntasCacheadas.value > 0 &&
-  props.resultado?.metricas_phoenix?.disponible === true,
+  preguntasCacheadas.value > 0,
 )
 
 function onExportarHTML() {

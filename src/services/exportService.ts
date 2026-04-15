@@ -36,11 +36,6 @@ function fmtFecha(iso: string): string {
   })
 }
 
-function fmtMs(ms: number | null | undefined): string {
-  if (ms == null) return '—'
-  return `${ms} ms`
-}
-
 // ─────────────────────────────────────────────────────────────────────────────
 // GENERADOR DE HTML
 // ─────────────────────────────────────────────────────────────────────────────
@@ -50,7 +45,6 @@ function generarHTML(r: ResultadoEvaluacion): string {
   const nivel    = nivelScore(pct)
   const scoreClr = colorScore(pct)
   const fecha    = fmtFecha(r.timestamp)
-  const phoenix  = r.metricas_phoenix
 
   // ── Resumen por grupo ──────────────────────────────────────────────────────
   const filasGrupo = Object.entries(r.resumen_por_grupo).map(([grupo, g]: [string, any]) => `
@@ -74,34 +68,6 @@ function generarHTML(r: ResultadoEvaluacion): string {
       <td style="font-size:10px; font-family:monospace; color:#9ca3af">${caso.detalle}</td>
       <td style="text-align:right; font-family:monospace; font-size:11px; color:${caso.latencia_ms < 500 ? '#10b981' : '#9ca3af'}">${caso.latencia_ms < 500 ? '⚡ caché' : caso.latencia_ms + ' ms'}</td>
     </tr>`).join('')
-
-  // ── Bloque Phoenix ─────────────────────────────────────────────────────────
-  const bloquePhoenix = phoenix.disponible && phoenix.spans_analizados ? `
-    <div class="card">
-      <h2>Métricas Phoenix</h2>
-      <table>
-        <tbody>
-          <tr><td>Spans analizados</td><td>${phoenix.spans_analizados}</td></tr>
-          <tr><td>Modelo LLM</td><td style="font-family:monospace">${phoenix.modelo_llm ?? '—'}</td></tr>
-          <tr><td>Modelo Embedding</td><td style="font-family:monospace">${phoenix.modelo_embed ?? '—'}</td></tr>
-          <tr><td>K retrieval</td><td>${phoenix.k_retrieval ?? '—'}</td></tr>
-          <tr><td>Umbral relevancia</td><td>${phoenix.umbral_relevancia ?? '—'}</td></tr>
-          <tr><td>HyDE aplicado</td><td>${phoenix.hyde_aplicado == null ? '—' : phoenix.hyde_aplicado ? 'Sí' : 'No'}</td></tr>
-          <tr><td>Latencia total avg</td><td>${fmtMs(phoenix.latencia_total_ms_avg)}</td></tr>
-          <tr><td>└ LLM generación</td><td style="color:#9ca3af">${fmtMs(phoenix.latencia_llm_ms_avg)}</td></tr>
-          <tr><td>└ Retrieval estimado</td><td style="color:#9ca3af">${fmtMs(phoenix.latencia_retrieval_avg)}</td></tr>
-          <tr><td>Fragmentos usados avg</td><td>${phoenix.fragmentos_usados_avg ?? '—'}</td></tr>
-        </tbody>
-      </table>
-    </div>` : phoenix.nota ? `
-    <div class="card">
-      <h2>Métricas Phoenix</h2>
-      <p style="color:#f59e0b; font-size:13px">⚠ ${phoenix.nota}</p>
-    </div>` : `
-    <div class="card">
-      <h2>Métricas Phoenix</h2>
-      <p style="color:#6b7280; font-size:13px">Phoenix no respondió durante la evaluación.</p>
-    </div>`
 
   return `<!DOCTYPE html>
 <html lang="es">
@@ -197,8 +163,6 @@ function generarHTML(r: ResultadoEvaluacion): string {
       <div class="stat-row"><span class="stat-label">Motor</span><span class="stat-value" style="color:#8b5cf6">${r.motor}</span></div>
       <div class="stat-row"><span class="stat-label">Duración</span><span class="stat-value">${r.duracion_total_seg}s</span></div>
       <div class="stat-row"><span class="stat-label">Fecha</span><span class="stat-value">${fecha}</span></div>
-      <div class="stat-row"><span class="stat-label">Latencia avg</span><span class="stat-value">${fmtMs(phoenix.latencia_total_ms_avg)}</span></div>
-      <div class="stat-row"><span class="stat-label">Fragmentos avg</span><span class="stat-value">${phoenix.fragmentos_usados_avg ?? '—'}</span></div>
     </div>
 
   </div>
@@ -240,16 +204,13 @@ function generarHTML(r: ResultadoEvaluacion): string {
     </table>
   </div>
 
-  <!-- Métricas Phoenix -->
-  ${bloquePhoenix}
-
   <!-- Guía de interpretación -->
   <div class="card">
     <h2>Guía de interpretación</h2>
     <table>
       <tbody>
         <tr><td style="font-weight:600; width:160px">TP Directo</td><td style="color:#6b7280">Si falla: problema de retrieval — umbral muy alto, k muy bajo, o chunking fragmenta el dato. Acción: bajar UMBRAL_RELEVANCIA o aumentar breakpoint_threshold.</td></tr>
-        <tr><td style="font-weight:600">TP Razonamiento</td><td style="color:#6b7280">Si falla: el LLM no sintetiza múltiples fragmentos. Acción: subir K. Revisar si HyDE mejora el match semántico.</td></tr>
+        <tr><td style="font-weight:600">TP Razonamiento</td><td style="color:#6b7280">Si falla: el LLM no sintetiza múltiples fragmentos. Acción: subir K.</td></tr>
         <tr><td style="font-weight:600">TN Fuera dominio</td><td style="color:#6b7280">Si falla: el sistema alucinó o el umbral está demasiado bajo. Acción: subir UMBRAL_RELEVANCIA.</td></tr>
         <tr><td style="font-weight:600">Corrección</td><td style="color:#6b7280">Si falla: el LLM confirma el error del usuario (sycophancy). Límite del modelo 8b — no tiene solución de parámetro.</td></tr>
         <tr><td style="font-weight:600">Anti-alucinación</td><td style="color:#6b7280">Si falla: ALUCINACIÓN CRÍTICA. El LLM usó conocimiento de preentrenamiento. Acción: verificar repeat_penalty, top_k, top_p.</td></tr>

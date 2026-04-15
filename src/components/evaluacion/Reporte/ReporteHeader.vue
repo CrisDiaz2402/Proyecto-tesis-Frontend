@@ -127,8 +127,6 @@ const parametros = computed(() => {
     { label: 'Motor',          value: r.motor,                               color: 'text-violet-300' },
     { label: 'Duración',       value: `${r.duracion_total_seg}s`,            color: null },
     { label: 'Fecha',          value: fecha,                                  color: null },
-    { label: 'Latencia avg',   value: r.metricas_phoenix.latencia_total_ms_avg != null ? `${r.metricas_phoenix.latencia_total_ms_avg} ms` : '—', color: null },
-    { label: 'Fragmentos avg', value: r.metricas_phoenix.fragmentos_usados_avg != null ? String(r.metricas_phoenix.fragmentos_usados_avg) : '—', color: null },
   ]
 })
 </script>

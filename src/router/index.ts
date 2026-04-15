@@ -50,12 +50,6 @@ const router = createRouter({
           name: 'admin-users',
           component: () => import('@/views/UsersView.vue'),
         },
-        // ── MONITOR DE CONCURRENCIA ────────────────────────────────────────────
-        {
-          path: 'monitor',
-          name: 'admin-monitor',
-          component: () => import('@/views/MonitorView.vue'),
-        },
       ],
     },
 
