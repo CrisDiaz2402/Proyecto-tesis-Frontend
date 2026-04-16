@@ -4,7 +4,7 @@ import { getAuthHeaders } from '@/services/authService'
 import type { ConfiguracionIA } from '../types/config.types'
 
 export async function obtenerConfiguracionIA(): Promise<ConfiguracionIA> {
-  const res = await fetch(`${BACKEND_URL}/api/config/ia`, {
+  const res = await fetch(`${BACKEND_URL}/api/config/motor`, {
     headers: { ...getAuthHeaders() },
   })
   if (!res.ok) throw new Error(`HTTP ${res.status}`)
@@ -12,7 +12,7 @@ export async function obtenerConfiguracionIA(): Promise<ConfiguracionIA> {
 }
 
 export async function actualizarConfiguracionIA(config: ConfiguracionIA): Promise<void> {
-  const res = await fetch(`${BACKEND_URL}/api/config/ia`, {
+  const res = await fetch(`${BACKEND_URL}/api/config/motor`, {
     method:  'PUT',
     headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
     body:    JSON.stringify(config),

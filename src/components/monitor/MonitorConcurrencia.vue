@@ -2,7 +2,7 @@
 <template>
   <div class="flex flex-col gap-6">
 
-    <!-- Métricas globales -->
+    <!-- ── Métricas globales ──────────────────────────────────────────────── -->
     <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
       <div
         v-for="m in metricas"
@@ -19,12 +19,55 @@
       </div>
     </div>
 
-    <!-- Consultas activas ahora mismo -->
+    <!-- ── Usuarios conectados ahora (sesiones WebSocket abiertas) ────────── -->
     <div class="bg-gray-800 border border-gray-700 rounded-xl overflow-hidden">
       <div class="px-6 py-4 border-b border-gray-700 flex items-center gap-2">
-        <span class="w-2 h-2 rounded-full bg-green-500 animate-pulse shrink-0"></span>
+        <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shrink-0"></span>
         <h3 class="text-sm font-semibold text-white uppercase tracking-wider">
-          En proceso ahora
+          Usuarios conectados
+        </h3>
+        <span class="ml-auto px-2 py-0.5 bg-gray-700 text-gray-400 text-xs rounded border border-gray-600">
+          {{ estado.total_conexiones }} en línea
+        </span>
+      </div>
+
+      <div class="p-4 flex flex-col gap-2 min-h-[80px]">
+        <div
+          v-if="estado.conexiones.length === 0"
+          class="flex items-center justify-center py-4 text-gray-500 text-sm"
+        >
+          Ningún usuario conectado en este momento
+        </div>
+        <div
+          v-for="c in estado.conexiones"
+          :key="c.client_id"
+          class="flex items-center gap-3 p-3 bg-emerald-500/10 border border-emerald-500/20 rounded-lg"
+        >
+          <Icon icon="mdi:account-circle-outline" class="text-emerald-400 text-xl shrink-0" />
+          <div class="flex-1 min-w-0">
+            <p class="text-sm text-white font-medium truncate">{{ c.username }}</p>
+            <p class="text-[10px] text-gray-500 font-mono">{{ c.client_id }}</p>
+          </div>
+          <div class="text-right shrink-0">
+            <p class="text-xs text-emerald-400 font-mono">{{ tiempoConectado(c.conectado_en) }}</p>
+            <p v-if="c.ip" class="text-[10px] text-gray-500">{{ c.ip }}</p>
+          </div>
+          <span
+            v-if="tieneConsultaActiva(c.client_id)"
+            class="px-2 py-0.5 bg-blue-500/20 text-blue-300 text-[10px] rounded border border-blue-500/30 shrink-0"
+          >
+            ⚙ procesando
+          </span>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Consultas en proceso ahora mismo ──────────────────────────────── -->
+    <div class="bg-gray-800 border border-gray-700 rounded-xl overflow-hidden">
+      <div class="px-6 py-4 border-b border-gray-700 flex items-center gap-2">
+        <span class="w-2 h-2 rounded-full bg-blue-500 animate-pulse shrink-0"></span>
+        <h3 class="text-sm font-semibold text-white uppercase tracking-wider">
+          Consultas en proceso
         </h3>
         <span class="ml-auto px-2 py-0.5 bg-gray-700 text-gray-400 text-xs rounded border border-gray-600">
           {{ estado.total_activas }} activa(s)
@@ -32,7 +75,10 @@
       </div>
 
       <div class="p-4 flex flex-col gap-2 min-h-[80px]">
-        <div v-if="estado.activas.length === 0" class="flex items-center justify-center py-4 text-gray-500 text-sm">
+        <div
+          v-if="estado.activas.length === 0"
+          class="flex items-center justify-center py-4 text-gray-500 text-sm"
+        >
           Sin consultas activas en este momento
         </div>
         <div
@@ -41,6 +87,7 @@
           class="flex items-center gap-3 p-3 bg-blue-500/10 border border-blue-500/20 rounded-lg"
         >
           <Icon icon="mdi:loading" class="animate-spin text-blue-400 shrink-0" />
+          <span class="text-[10px] font-mono text-gray-400 shrink-0 w-20 truncate">{{ c.client_id }}</span>
           <span class="text-xs font-mono text-blue-300 shrink-0 w-16">{{ c.motor }}</span>
           <span class="text-sm text-gray-200 flex-1 truncate">{{ c.pregunta }}</span>
           <span class="text-xs text-blue-400 font-mono shrink-0">{{ tiempoTranscurrido(c.inicio) }}s</span>
@@ -48,7 +95,7 @@
       </div>
     </div>
 
-    <!-- Historial reciente -->
+    <!-- ── Historial reciente ─────────────────────────────────────────────── -->
     <div class="bg-gray-800 border border-gray-700 rounded-xl overflow-hidden">
       <div class="px-6 py-4 border-b border-gray-700 flex items-center gap-2">
         <Icon icon="mdi:history" class="text-gray-400 text-lg" />
@@ -66,6 +113,7 @@
         <table class="w-full text-left">
           <thead>
             <tr class="bg-gray-900/50">
+              <th class="px-4 py-3 text-xs font-bold text-gray-400 uppercase tracking-wider">Usuario</th>
               <th class="px-4 py-3 text-xs font-bold text-gray-400 uppercase tracking-wider">Motor</th>
               <th class="px-4 py-3 text-xs font-bold text-gray-400 uppercase tracking-wider">Pregunta</th>
               <th class="px-4 py-3 text-xs font-bold text-gray-400 uppercase tracking-wider text-right">Latencia</th>
@@ -78,6 +126,9 @@
               :key="r.id + r.fin"
               class="hover:bg-gray-700/30 transition-colors"
             >
+              <td class="px-4 py-3">
+                <span class="text-[10px] font-mono text-gray-400">{{ r.client_id }}</span>
+              </td>
               <td class="px-4 py-3">
                 <span class="px-2 py-0.5 bg-blue-500/10 border border-blue-500/20 rounded text-[10px] font-mono text-blue-300">
                   {{ r.motor }}
@@ -99,56 +150,88 @@
       </div>
     </div>
 
-    <!-- Error de conexión -->
+    <!-- ── Banner de error / sin token ───────────────────────────────────── -->
     <div
       v-if="errorConexion"
-      class="flex items-center gap-3 bg-red-500/10 border border-red-500/20 rounded-xl p-4 text-red-300 text-sm"
+      class="flex items-start gap-3 bg-red-500/10 border border-red-500/20 rounded-xl p-4 text-red-300 text-sm"
     >
-      <Icon icon="mdi:wifi-off" class="text-xl shrink-0" />
-      No se pudo conectar al backend. Reintentando cada {{ POLL_MS / 1000 }}s...
+      <Icon icon="mdi:wifi-off" class="text-xl shrink-0 mt-0.5" />
+      <div class="flex flex-col gap-1">
+        <span class="font-semibold">Sin conexión con el monitor</span>
+        <span v-if="errorMsg" class="text-xs text-red-400/80">{{ errorMsg }}</span>
+        <span v-else class="text-xs text-red-400/80">Reconectando automáticamente...</span>
+      </div>
+      <!-- Botón de reintento manual si la reconexión automática ya se agotó -->
+      <button
+        v-if="errorMsg && errorMsg.includes('varios intentos')"
+        @click="conectar()"
+        class="ml-auto px-3 py-1.5 bg-red-600 hover:bg-red-500 text-white text-xs font-semibold rounded-lg transition-colors shrink-0"
+      >
+        Reintentar
+      </button>
     </div>
 
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { computed, onMounted } from 'vue'
 import { Icon } from '@iconify/vue'
-import { obtenerEstadoMonitor, type EstadoMonitor } from '@/services/backendService'
+import { useMonitorWebSocket } from '@/composables/useWebSocket'
+import { getToken } from '@/services/authService'
+import { BACKEND_URL } from '@/config/config'
 
-const POLL_MS = 2000
+// Convertir correctamente http → ws / https → wss
+const WS_BASE = BACKEND_URL.replace(/^https/, 'wss').replace(/^http/, 'ws')
 
-const estado = ref<EstadoMonitor>({
-  activas: [],
-  total_activas: 0,
-  historial: [],
-  latencia_avg_ms: 0,
-  cache_hits: 0,
-  total_consultas: 0,
-  timestamp: 0,
+// Obtener token — si está vacío, useMonitorWebSocket lo detectará y reportará
+const token = getToken() ?? ''
+
+const { estado, conectado, errorConexion, errorMsg, conectar } =
+  useMonitorWebSocket(WS_BASE, token)
+
+onMounted(() => {
+  // No conectar si no hay token — el composable ya pone errorConexion=true en ese caso
+  if (token) {
+    conectar()
+  }
 })
 
-const errorConexion = ref(false)
-let intervalo: ReturnType<typeof setInterval>
+// ─── Helpers de tiempo ────────────────────────────────────────────────────────
 
 function tiempoTranscurrido(inicio: number): string {
-  return (Date.now() / 1000 - inicio).toFixed(1)
+  const seg = Date.now() / 1000 - inicio
+  return seg > 0 ? seg.toFixed(1) : '0.0'
 }
 
+function tiempoConectado(desde: number): string {
+  const seg = Math.floor(Date.now() / 1000 - desde)
+  if (seg < 0)    return '0s'
+  if (seg < 60)   return `${seg}s`
+  if (seg < 3600) return `${Math.floor(seg / 60)}m ${seg % 60}s`
+  return `${Math.floor(seg / 3600)}h ${Math.floor((seg % 3600) / 60)}m`
+}
+
+function tieneConsultaActiva(clientId: string): boolean {
+  return estado.value.activas.some(a => a.client_id === clientId)
+}
+
+// ─── Métricas de cabecera ─────────────────────────────────────────────────────
+
 const metricas = computed(() => [
+  {
+    label: 'Usuarios en línea',
+    value: estado.value.total_conexiones,
+    icon:  'mdi:account-multiple',
+    bg:    'bg-emerald-600/10',
+    color: 'text-emerald-400',
+  },
   {
     label: 'Consultas activas',
     value: estado.value.total_activas,
     icon:  'mdi:lightning-bolt',
     bg:    'bg-blue-600/10',
     color: 'text-blue-400',
-  },
-  {
-    label: 'Total procesadas',
-    value: estado.value.total_consultas,
-    icon:  'mdi:chat-processing-outline',
-    bg:    'bg-violet-600/10',
-    color: 'text-violet-400',
   },
   {
     label: 'Latencia avg LLM',
@@ -165,20 +248,4 @@ const metricas = computed(() => [
     color: 'text-green-400',
   },
 ])
-
-async function fetchEstado() {
-  try {
-    estado.value = await obtenerEstadoMonitor()
-    errorConexion.value = false
-  } catch {
-    errorConexion.value = true
-  }
-}
-
-onMounted(() => {
-  fetchEstado()
-  intervalo = setInterval(fetchEstado, POLL_MS)
-})
-
-onUnmounted(() => clearInterval(intervalo))
 </script>

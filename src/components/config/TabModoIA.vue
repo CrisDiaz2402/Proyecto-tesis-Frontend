@@ -59,11 +59,11 @@
             <div class="flex flex-wrap gap-2 mt-auto">
               <span class="flex items-center gap-1 px-2 py-1 bg-gray-800 border border-gray-600 rounded-md text-[10px] font-semibold text-gray-300 uppercase">
                 <Icon icon="mdi:database-search-outline" class="text-xs" />
-                {{ modo.motor_vectores === 'cloud' ? 'Gemini Embed' : 'Ollama Embed' }}
+                {{ modo.motor_vectores === 'cloud' ? 'Gemini Embed' : 'sentence-transformers' }}
               </span>
               <span class="flex items-center gap-1 px-2 py-1 bg-gray-800 border border-gray-600 rounded-md text-[10px] font-semibold text-gray-300 uppercase">
                 <Icon icon="mdi:brain" class="text-xs" />
-                {{ modo.motor_llm === 'cloud' ? 'Gemini Flash' : 'Llama 3.1' }}
+                {{ modo.motor_llm === 'cloud' ? 'Gemini Flash' : 'vLLM (Qwen2.5)'}}
               </span>
             </div>
           </label>
@@ -138,8 +138,8 @@ const guardar = async () => {
   guardando.value = true
   try {
     const [motor_vectores, motor_llm] = modoSeleccionado.value.split(':') as [MotorTipo, MotorTipo]
-    const res = await actualizarConfiguracionIA(motor_vectores, motor_llm)
-    toast.success(res.mensaje || 'Configuración guardada correctamente.')
+    await actualizarConfiguracionIA({ motor_vectores, motor_llm })
+    toast.success('Configuración guardada correctamente.')
   } catch (error: any) {
     toast.error(error.message || 'Error al guardar la configuración.')
   } finally {

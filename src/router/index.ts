@@ -45,6 +45,12 @@ const router = createRouter({
           name: 'admin-evaluacion',
           component: () => import('@/views/EvaluacionView.vue'),
         },
+        // ── MONITOR DE USUARIOS ────────────────────────────────────────────────
+        {
+          path: 'monitor',
+          name: 'admin-monitor',
+          component: () => import('@/views/MonitorView.vue'),
+        },
         {
           path: 'users',
           name: 'admin-users',

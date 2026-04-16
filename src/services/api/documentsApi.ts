@@ -104,3 +104,16 @@ export async function procesarTodosLosDocumentos(motor: MotorTipo): Promise<Acci
   }
   return res.json()
 }
+
+/** Elimina TODOS los documentos del sistema (endpoint de confirmación). */
+export async function eliminarTodosLosDocumentos(): Promise<AccionGlobalResponse> {
+  const res = await fetch(`${BACKEND_URL}/api/documents/all/confirm`, {
+    method:  'DELETE',
+    headers: { ...getAuthHeaders() },
+  })
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ detail: 'Error al eliminar todos los documentos.' }))
+    throw new Error(err.detail ?? `HTTP ${res.status}`)
+  }
+  return res.json()
+}

@@ -4,7 +4,7 @@ import { getAuthHeaders } from '@/services/authService'
 import type { ChatResponse } from '../types/chat.types'
 
 export async function consultarRAG(pregunta: string): Promise<ChatResponse> {
-  const res = await fetch(`${BACKEND_URL}/api/chat`, {
+  const res = await fetch(`${BACKEND_URL}/api/chat/consultar`, {
     method: 'POST',
     headers: {
       ...getAuthHeaders(),

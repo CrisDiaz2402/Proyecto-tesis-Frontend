@@ -1,0 +1,20 @@
+<template>
+  <div class="p-8">
+    <div class="flex items-center justify-between mb-8">
+      <div>
+        <h1 class="text-2xl font-bold text-white">Monitor de Usuarios</h1>
+        <p class="text-gray-400 text-sm mt-1">Seguimiento en tiempo real de conexiones y consultas del sistema</p>
+      </div>
+      <div class="flex items-center gap-2">
+        <span class="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
+        <span class="text-gray-400 text-xs">WebSocket en tiempo real</span>
+      </div>
+    </div>
+
+    <MonitorConcurrencia />
+  </div>
+</template>
+
+<script setup lang="ts">
+import MonitorConcurrencia from '@/components/monitor/MonitorConcurrencia.vue'
+</script>
