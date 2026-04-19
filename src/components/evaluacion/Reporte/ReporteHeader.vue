@@ -1,15 +1,7 @@
 <!-- src/components/evaluacion/Reporte/ReporteHeader.vue -->
-<!--
-  Cabecera del reporte: score global con nivel semántico,
-  conteo PASS/PARCIAL/FAIL y parámetros del experimento.
--->
 <template>
   <div class="flex flex-col gap-4">
-
-    <!-- Score global + parámetros del experimento -->
     <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-
-      <!-- Score global (tarjeta grande) -->
       <div :class="['md:col-span-1 rounded-xl p-6 border flex flex-col items-center justify-center text-center gap-2', bgScore]">
         <p class="text-xs font-bold uppercase tracking-widest" :class="colorScore">Score Global</p>
         <p class="text-6xl font-black" :class="colorScore">{{ pctScore }}%</p>
@@ -21,7 +13,6 @@
         </p>
       </div>
 
-      <!-- Conteo PASS / PARCIAL / FAIL -->
       <div class="md:col-span-1 bg-gray-800 border border-gray-700 rounded-xl p-5 flex flex-col justify-center gap-3">
         <p class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Distribución de veredictos</p>
 
@@ -60,7 +51,6 @@
 
       </div>
 
-      <!-- Parámetros del experimento -->
       <div class="md:col-span-1 bg-gray-800 border border-gray-700 rounded-xl p-5 flex flex-col gap-2">
         <p class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Parámetros del experimento</p>
 

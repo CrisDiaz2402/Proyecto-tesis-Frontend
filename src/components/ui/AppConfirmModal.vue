@@ -47,9 +47,8 @@
 </template>
 
 <script setup lang="ts">
-import { Icon } from '@iconify/vue'
 
-// ── Props (Datos que recibe el modal) ──
+
 const props = withDefaults(defineProps<{
   isOpen: boolean
   title?: string
@@ -66,7 +65,6 @@ const props = withDefaults(defineProps<{
   isLoading: false
 })
 
-// ── Emits (Eventos que dispara hacia la vista padre) ──
 const emit = defineEmits<{
   (e: 'confirm'): void
   (e: 'cancel'): void

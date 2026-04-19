@@ -1,18 +1,9 @@
 <!-- src/views/EvaluacionView.vue -->
-<!--
-  Vista principal del Evaluador RAG.
-  Orquesta las 2 secciones:
-    A — BancoPreguntasSection (CRUD de casos + botón lanzar)
-    B — ReporteSection (resultados, gráficas)
-
-  La evaluación usa ejecutarEvaluacionStream (SSE) en lugar de la llamada
-  síncrona, lo que permite mostrar un porcentaje real de avance caso a caso.
--->
 <template>
-  <div class="p-6 flex flex-col gap-6 max-w-5xl mx-auto">
+  <div class="p-4 sm:p-6 lg:p-8 flex flex-col gap-6 max-w-5xl mx-auto">
 
     <!-- Cabecera de la vista -->
-    <div class="flex items-start justify-between">
+    <div class="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
       <div>
         <h1 class="text-2xl font-bold text-white">Evaluador RAG</h1>
         <p class="text-gray-400 text-sm mt-1">
@@ -20,7 +11,6 @@
         </p>
       </div>
 
-      <!-- Badge de estado del sistema -->
       <div class="flex items-center gap-2 flex-wrap justify-end">
         <span class="flex items-center gap-1.5 px-2.5 py-1.5 bg-gray-800 border border-gray-700 rounded-lg text-xs">
           <span class="w-1.5 h-1.5 rounded-full" :class="motorActivo ? 'bg-green-500' : 'bg-gray-600'"></span>
@@ -30,7 +20,6 @@
       </div>
     </div>
 
-    <!-- Error de carga del motor -->
     <div
       v-if="errorMotor"
       class="bg-red-500/10 border border-red-500/30 rounded-xl p-4 flex items-center gap-3"
@@ -39,7 +28,6 @@
       <p class="text-red-300 text-sm">{{ errorMotor }}</p>
     </div>
 
-    <!-- Error de evaluación -->
     <div
       v-if="errorEvaluacion"
       class="bg-red-500/10 border border-red-500/30 rounded-xl p-4 flex items-start gap-3"
@@ -54,13 +42,11 @@
       </button>
     </div>
 
-    <!-- ── Estado de progreso mientras evalúa ────────────────────────────────── -->
     <div
       v-if="evaluando"
       class="bg-blue-500/10 border border-blue-500/20 rounded-xl p-5 flex flex-col gap-4"
     >
-      <!-- Cabecera del bloque de progreso -->
-      <div class="flex items-center gap-4">
+      <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4">
         <Icon icon="mdi:loading" class="animate-spin text-3xl text-blue-400 shrink-0" />
         <div class="flex-1 min-w-0">
           <p class="text-blue-300 text-sm font-semibold">Evaluación en progreso...</p>
@@ -74,13 +60,11 @@
             <span v-if="ultimoCasoId" class="ml-1 text-blue-500/60">({{ ultimoCasoId }})</span>
           </p>
         </div>
-        <!-- Porcentaje numérico -->
         <span class="text-blue-300 font-mono font-bold text-lg shrink-0">
           {{ progreso }}%
         </span>
       </div>
 
-      <!-- Barra de progreso real -->
       <div class="w-full bg-gray-700/60 rounded-full h-2.5 overflow-hidden">
         <div
           class="h-2.5 rounded-full transition-all duration-500 ease-out"
@@ -89,7 +73,6 @@
         ></div>
       </div>
 
-      <!-- Mini-resultado del último caso evaluado -->
       <div
         v-if="ultimoResultado"
         class="flex items-center gap-2 text-xs text-gray-400"
@@ -125,7 +108,6 @@
       </div>
     </div>
 
-    <!-- SECCIÓN A: Banco de preguntas -->
     <BancoPreguntasSection
       v-model:experimento="experimento"
       :motor-activo="motorActivo"
@@ -133,7 +115,6 @@
       @lanzar="onLanzar"
     />
 
-    <!-- SECCIÓN B: Reporte (solo visible cuando hay resultados) -->
     <ReporteSection :resultado="resultado" />
 
   </div>
@@ -141,7 +122,7 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
-import { Icon } from '@iconify/vue'
+
 import { toast } from 'vue3-toastify'
 import {
   obtenerConfiguracionIA,
@@ -156,7 +137,6 @@ import type {
 import BancoPreguntasSection from '@/components/evaluacion/BancoPreguntas/BancoPreguntasSection.vue'
 import ReporteSection        from '@/components/evaluacion/Reporte/ReporteSection.vue'
 
-// ── Estado ────────────────────────────────────────────────────────────────────
 
 const motorActivo     = ref('')
 const errorMotor      = ref('')
@@ -164,15 +144,11 @@ const evaluando       = ref(false)
 const errorEvaluacion = ref('')
 const experimento     = ref('baseline')
 const resultado       = ref<ResultadoEvaluacion | null>(null)
-
-// Estado del progreso en tiempo real
 const progreso       = ref(0)   // 0–100
 const casoActual     = ref(0)
 const totalCasos     = ref(0)
 const ultimoCasoId   = ref('')
 const ultimoResultado = ref<ResultadoCaso | null>(null)
-
-// ── Carga inicial ─────────────────────────────────────────────────────────────
 
 onMounted(async () => {
   try {
@@ -183,14 +159,10 @@ onMounted(async () => {
   }
 })
 
-// ── Lanzar evaluación ─────────────────────────────────────────────────────────
-
 async function onLanzar(casos: CasoEvaluacion[], exp: string) {
   evaluando.value       = true
   errorEvaluacion.value = ''
   resultado.value       = null
-
-  // Reiniciar estado de progreso
   progreso.value        = 0
   casoActual.value      = 0
   totalCasos.value      = casos.filter(c => c.habilitado).length
@@ -218,7 +190,6 @@ async function onLanzar(casos: CasoEvaluacion[], exp: string) {
 
     resultado.value = reporte
 
-    // Toast con resultado final
     const pct = Math.round(reporte.score_global * 100)
     if (pct >= 85) {
       toast.success(`Evaluación completada — Score: ${pct}% ✓`)
@@ -228,7 +199,6 @@ async function onLanzar(casos: CasoEvaluacion[], exp: string) {
       toast.error(`Evaluación completada — Score: ${pct}% ✗`)
     }
 
-    // Scroll suave al reporte
     setTimeout(() => {
       const el = document.querySelector('[data-reporte]')
       if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' })
@@ -244,7 +214,6 @@ async function onLanzar(casos: CasoEvaluacion[], exp: string) {
 </script>
 
 <style>
-/* Estilos de impresión: ocultar el sidebar y mostrar solo el reporte */
 @media print {
   aside,
   header,

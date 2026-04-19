@@ -1,19 +1,18 @@
 <template>
-  <div class="p-8">
+  <div class="p-4 sm:p-6 lg:p-8">
 
-    <!-- ── CABECERA ──────────────────────────────────────────────────────── -->
-    <div class="flex items-center justify-between mb-6">
+    <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mb-6">
       <div>
         <h1 class="text-2xl font-bold text-white">Gestión de Documentos</h1>
         <p class="text-gray-400 text-sm mt-1">Base de conocimiento del asistente virtual</p>
       </div>
 
-      <div class="flex flex-col items-end">
+      <div class="flex flex-col items-start sm:items-end">
         <button
           @click="abrirModal"
           :disabled="documentos.length >= MAX_DOCUMENTOS"
           :class="[
-            'flex items-center gap-2 px-4 py-2.5 text-sm font-semibold rounded-lg transition-colors shadow-lg',
+            'flex items-center gap-2 px-4 py-2.5 text-sm font-semibold rounded-lg transition-colors shadow-lg w-full sm:w-auto justify-center',
             documentos.length >= MAX_DOCUMENTOS
               ? 'bg-gray-600 text-gray-400 cursor-not-allowed'
               : 'bg-blue-600 hover:bg-blue-500 text-white shadow-blue-900/20'
@@ -28,15 +27,13 @@
       </div>
     </div>
 
-    <!-- ── PANEL DE ADMINISTRACIÓN GLOBAL ────────────────────────────────── -->
     <div class="bg-gray-800 border border-gray-700 rounded-xl overflow-hidden mb-8 shadow-lg">
-      <div class="px-6 py-4 border-b border-gray-700 flex flex-wrap justify-between items-center gap-3 bg-gray-800/80">
+      <div class="px-4 sm:px-6 py-4 border-b border-gray-700 flex flex-wrap justify-between items-center gap-3 bg-gray-800/80">
         <h2 class="text-sm font-semibold text-white flex items-center gap-2">
           <Icon icon="mdi:shield-alert-outline" class="text-orange-400 text-lg" />
           Administración Global del Sistema RAG
         </h2>
 
-        <!-- Selector de ecosistema objetivo (3 opciones) -->
         <div class="flex items-center gap-3">
           <span class="text-xs text-gray-400 uppercase tracking-wider font-semibold">Ecosistema:</span>
           <div class="flex bg-gray-900 border border-gray-700 rounded-lg p-1 gap-0.5">
@@ -56,9 +53,8 @@
         </div>
       </div>
 
-      <div class="p-6 flex flex-wrap gap-4 items-center bg-gray-800/30">
+      <div class="p-4 sm:p-6 flex flex-wrap gap-3 sm:gap-4 items-center bg-gray-800/30">
 
-        <!-- Limpiar Caché -->
         <button
           @click="pedirConfirmacion('cache')"
           :disabled="procesandoGlobal"
@@ -69,7 +65,6 @@
           <span class="text-yellow-400/70 text-xs">({{ motorGlobal === 'all' ? 'll + lc + cc' : motorGlobal === 'local' ? 'll + lc' : 'cc' }})</span>
         </button>
 
-        <!-- Reiniciar Vectores -->
         <button
           @click="pedirConfirmacion('vectores')"
           :disabled="procesandoGlobal"
@@ -80,7 +75,6 @@
           <span class="text-orange-400/70 text-xs">({{ motorGlobal === 'all' ? 'Local + Nube' : motorGlobal === 'local' ? 'Local' : 'Nube' }})</span>
         </button>
 
-        <!-- Sincronizar -->
         <button
           @click="pedirConfirmacion('sincronizar')"
           :disabled="procesandoGlobal || motorGlobal === 'all'"
@@ -94,7 +88,6 @@
 
         <div class="flex-1"></div>
 
-        <!-- Formatear TODO -->
         <button
           @click="pedirConfirmacion('formatear')"
           :disabled="procesandoGlobal"
@@ -107,7 +100,6 @@
       </div>
     </div>
 
-    <!-- ── TABLA DE DOCUMENTOS ────────────────────────────────────────────── -->
     <div class="bg-gray-800 border border-gray-700 rounded-xl overflow-hidden shadow-lg">
       <div class="px-6 py-4 border-b border-gray-700 flex items-center gap-2">
         <Icon icon="mdi:file-document-multiple-outline" class="text-blue-400 text-lg" />
@@ -127,25 +119,26 @@
         <p class="text-gray-500 text-sm mt-1">Sube archivos PDF, Word, TXT o Markdown para empezar.</p>
       </div>
 
-      <table v-else class="w-full text-left text-sm text-gray-300">
+      <div v-else class="overflow-x-auto">
+      <table class="w-full text-left text-sm text-gray-300">
         <thead class="bg-gray-900/50 text-gray-400 text-xs uppercase tracking-wider">
           <tr>
-            <th class="px-6 py-4 font-medium">Archivo</th>
-            <th class="px-6 py-4 font-medium">Subido por</th>
-            <th class="px-6 py-4 font-medium">Estado en Ecosistemas</th>
-            <th class="px-6 py-4 font-medium text-right">Acciones</th>
+            <th class="px-4 sm:px-6 py-4 font-medium">Archivo</th>
+            <th class="px-4 sm:px-6 py-4 font-medium hidden sm:table-cell">Subido por</th>
+            <th class="px-4 sm:px-6 py-4 font-medium">Estado en Ecosistemas</th>
+            <th class="px-4 sm:px-6 py-4 font-medium text-right">Acciones</th>
           </tr>
         </thead>
         <tbody class="divide-y divide-gray-700">
           <tr v-for="doc in documentos" :key="doc.id" class="hover:bg-gray-750 transition-colors group">
-            <td class="px-6 py-4 font-medium text-white flex items-center gap-3">
+            <td class="px-4 sm:px-6 py-4 font-medium text-white flex items-center gap-3">
               <Icon :icon="getIconoExtension(doc.nombre_archivo)" class="text-xl text-gray-400" />
               <div class="flex flex-col">
                 <span>{{ doc.nombre_archivo }}</span>
                 <span class="text-[10px] text-gray-500">{{ formatearFecha(doc.fecha_subida) }}</span>
               </div>
             </td>
-            <td class="px-6 py-4">
+            <td class="px-4 sm:px-6 py-4 hidden sm:table-cell">
               <div class="flex items-center gap-2">
                 <div class="w-6 h-6 rounded-full bg-blue-900 flex items-center justify-center text-xs font-bold text-blue-300">
                   {{ doc.subido_por.charAt(0).toUpperCase() }}
@@ -153,7 +146,7 @@
                 {{ doc.subido_por }}
               </div>
             </td>
-            <td class="px-6 py-4">
+            <td class="px-4 sm:px-6 py-4">
               <div class="flex flex-col gap-1.5">
                 <span v-if="doc.procesado_local" class="px-2 py-1 bg-blue-900/30 text-blue-400 text-[10px] uppercase font-bold rounded border border-blue-800 w-fit flex items-center gap-1">
                   🖥️ {{ doc.estado_local }}
@@ -169,7 +162,7 @@
                 </span>
               </div>
             </td>
-            <td class="px-6 py-4 text-right">
+            <td class="px-4 sm:px-6 py-4 text-right">
               <div class="flex items-center justify-end gap-3">
                 <button v-if="doc.procesado_local" @click="descargar(doc, 'local')" class="text-blue-400 hover:text-blue-300 transition-colors" title="Descargar de Local">
                   <Icon icon="mdi:monitor-arrow-down" class="text-xl" />
@@ -188,11 +181,11 @@
           </tr>
         </tbody>
       </table>
+      </div>
     </div>
 
-    <!-- ── MODAL SUBIR DOCUMENTO ──────────────────────────────────────────── -->
-    <div v-if="modalSubirAbierto" class="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50">
-      <div class="bg-gray-800 rounded-2xl w-full max-w-md p-6 border border-gray-700 shadow-2xl relative animate-pop-in">
+    <div v-if="modalSubirAbierto" class="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+      <div class="bg-gray-800 rounded-2xl w-full max-w-md p-4 sm:p-6 border border-gray-700 shadow-2xl relative animate-pop-in">
         <button @click="cerrarModalSubir" class="absolute top-4 right-4 text-gray-400 hover:text-white transition-colors">
           <Icon icon="mdi:close" class="text-xl" />
         </button>
@@ -250,9 +243,8 @@
       </div>
     </div>
 
-    <!-- ── MODAL ELIMINAR DOCUMENTO INDIVIDUAL ────────────────────────────── -->
-    <div v-if="modalEliminarDoc.show" class="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50">
-      <div class="bg-gray-800 border border-red-700/30 rounded-2xl p-6 w-full max-w-sm shadow-2xl relative animate-pop-in">
+    <div v-if="modalEliminarDoc.show" class="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+      <div class="bg-gray-800 border border-red-700/30 rounded-2xl p-4 sm:p-6 w-full max-w-sm shadow-2xl relative animate-pop-in">
         <h3 class="text-lg font-bold text-white mb-2 flex items-center gap-2">
           <Icon icon="mdi:alert-circle-outline" class="text-red-500 text-xl" /> Eliminar Documento
         </h3>
@@ -261,7 +253,6 @@
           Selecciona de qué ecosistema deseas eliminar <strong class="text-white">{{ modalEliminarDoc.doc?.nombre_archivo }}</strong>:
         </p>
 
-        <!-- Info sobre implicaciones del borrado -->
         <div class="bg-gray-900/60 border border-gray-700 rounded-lg p-3 mb-4 text-xs text-gray-400 space-y-1">
           <p class="text-gray-300 font-semibold mb-1">⚠️ Al eliminar de un ecosistema se borra:</p>
           <p>• El archivo físico de esa carpeta</p>
@@ -299,7 +290,6 @@
             <span class="ml-auto text-[10px] text-emerald-400/70">cache_cc</span>
           </label>
 
-          <!-- Si solo existe en uno, muestra mensaje informativo -->
           <div
             v-if="!modalEliminarDoc.doc?.procesado_local && modalEliminarDoc.doc?.procesado_cloud"
             class="p-3 bg-blue-900/20 border border-blue-700/40 rounded-lg text-xs text-blue-300"
@@ -332,7 +322,6 @@
       </div>
     </div>
 
-    <!-- ── MODAL CONFIRMACIÓN GENÉRICO (caché / vectores / sincronizar) ───── -->
     <AppConfirmModal
       :isOpen="modalConfirm.show"
       :title="modalConfirm.titulo"
@@ -345,7 +334,6 @@
       @cancel="cerrarModalConfirm"
     />
 
-    <!-- ── MODAL FORMATEAR SISTEMA ────────────────────────────────────────── -->
     <div v-if="modalFormatear.show" class="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-[100] px-4" @click.self="cerrarModalFormatear">
       <div class="bg-gray-800 border border-red-700/50 rounded-2xl p-6 w-full max-w-md shadow-2xl animate-pop-in">
         <div class="flex items-center gap-3 mb-4">
@@ -405,7 +393,7 @@
 
 <script setup lang="ts">
 import { ref, onMounted, reactive } from 'vue'
-import { Icon } from '@iconify/vue'
+
 import { toast } from 'vue3-toastify'
 import { MAX_DOCUMENTOS, LIMITE_TAMANO_BYTES, LIMITE_TAMANO_MB, EXTENSIONES_PERMITIDAS } from '@/config/config'
 import { useAuthStore } from '@/stores/auth'
@@ -424,43 +412,31 @@ import {
 
 const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000'
 const authStore = useAuthStore()
-
-// ── Estado general ────────────────────────────────────────────────────────────
 const documentos       = ref<Documento[]>([])
 const cargando         = ref(true)
 const procesandoGlobal = ref(false)
-
-// ── Selectores de Motor ───────────────────────────────────────────────────────
-// motorGlobal: para acciones globales (cache/vectores) — puede ser 'local' | 'cloud' | 'all'
-// motorSubida: para subir documentos — solo 'local' | 'cloud'
 const motorGlobal = ref<MotorScope>('local')
 const motorSubida = ref<MotorTipo>('local')
-
-// ── Modal subir documento ─────────────────────────────────────────────────────
 const modalSubirAbierto   = ref(false)
 const fileInput           = ref<HTMLInputElement | null>(null)
 const archivoSeleccionado = ref<File | null>(null)
 const subiendo            = ref(false)
 const mensajeModalSubir   = ref<{ tipo: 'ok' | 'error'; texto: string } | null>(null)
 
-// ── Modal confirmación genérico ───────────────────────────────────────────────
 type AccionGlobal = 'cache' | 'vectores' | 'sincronizar' | 'formatear'
 const modalConfirm = reactive({
   show: false, accion: '' as AccionGlobal, titulo: '', mensaje: '', textoConfirmar: '', destructivo: false,
 })
 
-// ── Modal eliminar documento individual ──────────────────────────────────────
 const modalEliminarDoc = reactive({
   show: false, loading: false, doc: null as Documento | null,
 })
 const eliminarOpciones = reactive({ local: false, cloud: false })
 
-// ── Modal Formatear ───────────────────────────────────────────────────────────
 const modalFormatear = reactive({
   show: false, loading: false, password: '', verPassword: false,
 })
 
-// ── CARGA DE DATOS ────────────────────────────────────────────────────────────
 onMounted(cargarDocumentos)
 async function cargarDocumentos() {
   cargando.value = true
@@ -473,7 +449,6 @@ async function cargarDocumentos() {
   }
 }
 
-// ── HELPERS DE ETIQUETAS ──────────────────────────────────────────────────────
 function etiquetaMotor(m: MotorScope): string {
   return { local: 'Local', cloud: 'Nube', all: 'Local + Nube' }[m] ?? m
 }
@@ -486,7 +461,6 @@ function detalleCacheMotor(m: MotorScope): string {
   }[m] ?? m
 }
 
-// ── ACCIONES GLOBALES ─────────────────────────────────────────────────────────
 function pedirConfirmacion(accion: AccionGlobal) {
   if (accion === 'formatear') {
     modalFormatear.show       = true
@@ -495,7 +469,6 @@ function pedirConfirmacion(accion: AccionGlobal) {
     return
   }
 
-  // Sincronizar no soporta "all" — requiere elegir un motor concreto
   if (accion === 'sincronizar' && motorGlobal.value === 'all') {
     toast.warning('Selecciona "Local" o "Nube" para sincronizar. No puedes sincronizar ambos a la vez.')
     return
@@ -551,19 +524,15 @@ async function ejecutarAccionConfirmada() {
     const motor = motorGlobal.value
 
     if (modalConfirm.accion === 'cache') {
-      // motor puede ser 'local' | 'cloud' | 'all' — el backend sabe qué cachés borrar
       const res = await limpiarSoloCache(motor)
       toast.success(res.mensaje)
 
     } else if (modalConfirm.accion === 'vectores') {
-      // motor puede ser 'local' | 'cloud' | 'all'
-      // El backend actualiza la BD, así que recargamos documentos
       const res = await limpiarVectoresYCache(motor)
       toast.success(res.mensaje)
       await cargarDocumentos()
 
     } else if (modalConfirm.accion === 'sincronizar') {
-      // sincronizar solo acepta 'local' | 'cloud'
       const res = await procesarTodosLosDocumentos(motor as MotorTipo)
       toast.success(res.mensaje)
       await cargarDocumentos()
@@ -577,7 +546,6 @@ async function ejecutarAccionConfirmada() {
   }
 }
 
-// ── FORMATEAR SISTEMA ─────────────────────────────────────────────────────────
 function cerrarModalFormatear() {
   if (!modalFormatear.loading) {
     modalFormatear.show     = false
@@ -589,7 +557,6 @@ async function ejecutarFormatear() {
   if (!modalFormatear.password.trim()) return
   modalFormatear.loading = true
   try {
-    // Verificar contraseña antes de formatear
     const verificacion = await fetch(`${BACKEND_URL}/api/auth/login`, {
       method:  'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -612,7 +579,6 @@ async function ejecutarFormatear() {
   }
 }
 
-// ── ELIMINAR DOCUMENTO INDIVIDUAL ─────────────────────────────────────────────
 function abrirModalEliminarDoc(doc: Documento) {
   modalEliminarDoc.doc    = doc
   eliminarOpciones.local  = false
@@ -631,9 +597,6 @@ async function ejecutarEliminarDoc() {
   if (!modalEliminarDoc.doc) return
   modalEliminarDoc.loading = true
   try {
-    // Ejecutar las eliminaciones en secuencia según lo que seleccionó el usuario.
-    // Cada llamada al backend borra: archivo físico + vectores de la colección
-    // + caché en todos los modos que usan ese motor_vectores.
     if (eliminarOpciones.local) {
       await eliminarDocumento(modalEliminarDoc.doc.id, 'local')
     }
@@ -655,7 +618,6 @@ async function ejecutarEliminarDoc() {
   }
 }
 
-// ── SUBIR DOCUMENTO ───────────────────────────────────────────────────────────
 function abrirModal() {
   modalSubirAbierto.value   = true
   archivoSeleccionado.value = null
@@ -694,7 +656,6 @@ async function confirmarSubida() {
   }
 }
 
-// ── DESCARGAR DOCUMENTO ───────────────────────────────────────────────────────
 async function descargar(doc: Documento, motor: MotorTipo) {
   try {
     await descargarDocumento(doc.id, doc.nombre_archivo, motor)
@@ -704,7 +665,6 @@ async function descargar(doc: Documento, motor: MotorTipo) {
   }
 }
 
-// ── HELPERS ───────────────────────────────────────────────────────────────────
 function formatearFecha(fechaStr: string) {
   return new Intl.DateTimeFormat('es-EC', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(fechaStr))
 }

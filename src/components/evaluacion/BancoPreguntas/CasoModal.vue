@@ -8,12 +8,11 @@
   <Teleport to="body">
     <div
       v-if="abierto"
-      class="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-start justify-center z-50 p-4 overflow-y-auto"
+      class="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-start justify-center z-50 p-3 sm:p-4 overflow-y-auto"
       @click.self="cerrar"
     >
       <div class="bg-gray-800 border border-gray-700 rounded-2xl w-full max-w-lg shadow-2xl my-8">
 
-        <!-- Header -->
         <div class="flex items-center justify-between px-6 py-4 border-b border-gray-700">
           <h2 class="text-sm font-bold text-white flex items-center gap-2">
             <Icon :icon="modoEdicion ? 'mdi:pencil-outline' : 'mdi:plus-circle-outline'" class="text-blue-400 text-lg" />
@@ -24,10 +23,8 @@
           </button>
         </div>
 
-        <!-- Formulario -->
-        <div class="px-6 py-5 flex flex-col gap-5">
+        <div class="px-4 sm:px-6 py-5 flex flex-col gap-5">
 
-          <!-- Grupo -->
           <div class="flex flex-col gap-1.5">
             <label class="text-xs font-semibold text-gray-300">Grupo</label>
             <p class="text-[11px] text-gray-500">Categoría para agrupar en el resumen y diagnóstico.</p>
@@ -52,7 +49,6 @@
             </p>
           </div>
 
-          <!-- Tipo -->
           <div class="flex flex-col gap-1.5">
             <label class="text-xs font-semibold text-gray-300">Tipo de verificación</label>
             <p class="text-[11px] text-gray-500">Define la lógica de scoring que se aplica a la respuesta del RAG.</p>
@@ -74,7 +70,6 @@
             </div>
           </div>
 
-          <!-- Pregunta -->
           <div class="flex flex-col gap-1.5">
             <label class="text-xs font-semibold text-gray-300">Pregunta <span class="text-red-400">*</span></label>
             <textarea
@@ -89,7 +84,6 @@
             </p>
           </div>
 
-          <!-- Claves -->
           <TagInput
             v-model="form.claves"
             :label="labelClaves"
@@ -102,7 +96,6 @@
             <Icon icon="mdi:alert-circle-outline" /> {{ errores.claves }}
           </p>
 
-          <!-- Claves prohibidas (solo para corrige y no_alucina) -->
           <TagInput
             v-if="necesitaClavesProhibidas"
             v-model="form.claves_prohibidas"
@@ -112,7 +105,6 @@
             color-chip="red"
           />
 
-          <!-- Descripción -->
           <div class="flex flex-col gap-1.5">
             <label class="text-xs font-semibold text-gray-300">
               Descripción
@@ -128,8 +120,7 @@
 
         </div>
 
-        <!-- Footer -->
-        <div class="flex gap-3 px-6 py-4 border-t border-gray-700">
+        <div class="flex gap-3 px-4 sm:px-6 py-4 border-t border-gray-700">
           <button
             type="button"
             @click="cerrar"
@@ -154,16 +145,14 @@
 
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue'
-import { Icon } from '@iconify/vue'
-import type { CasoEvaluacion, TipoCaso } from '@/services/backendService'
-import { GRUPOS_PREDEFINIDOS, generarId } from '@/types/evaluacion'
-import TagInput from '@/components/evaluacion/shared/TagInput.vue'
 
-// ── Props / Emits ─────────────────────────────────────────────────────────────
+import type { CasoEvaluacion, TipoCaso } from '@/services/backendService'
+import { GRUPOS_PREDEFINIDOS, crearCasoVacio } from '@/types/evaluacion'
+import TagInput from '@/components/evaluacion/shared/TagInput.vue'
 
 const props = defineProps<{
   abierto:     boolean
-  casoInicial: CasoEvaluacion | null   // null = crear, objeto = editar
+  casoInicial: CasoEvaluacion | null   
 }>()
 
 const emit = defineEmits<{
@@ -171,16 +160,12 @@ const emit = defineEmits<{
   guardar: [caso: CasoEvaluacion]
 }>()
 
-// ── Constantes ────────────────────────────────────────────────────────────────
-
 const TIPOS: { value: TipoCaso; label: string; descripcion: string }[] = [
   { value: 'contiene',    label: 'contiene',    descripcion: 'La respuesta DEBE incluir todas las claves.' },
   { value: 'no_contiene', label: 'no_contiene', descripcion: 'La respuesta NO debe mencionar las claves.' },
   { value: 'corrige',     label: 'corrige',     descripcion: 'La respuesta debe corregir el dato falso de la pregunta.' },
   { value: 'no_alucina',  label: 'no_alucina',  descripcion: 'La entidad no existe; el sistema nunca debe inventar datos.' },
 ]
-
-// ── Estado del formulario ────────────────────────────────────────────────────
 
 const form = ref<Omit<CasoEvaluacion, 'id'>>({
   grupo:             'TP Directo',
@@ -194,8 +179,6 @@ const form = ref<Omit<CasoEvaluacion, 'id'>>({
 
 const grupoCustom = ref('')
 const errores = ref<Record<string, string>>({})
-
-// ── Computadas ────────────────────────────────────────────────────────────────
 
 const modoEdicion = computed(() => props.casoInicial !== null)
 
@@ -223,9 +206,6 @@ const descripcionClaves = computed(() => {
   return map[form.value.tipo]
 })
 
-// ── Watchers ──────────────────────────────────────────────────────────────────
-
-// Cargar datos del caso al abrir en modo edición
 watch(() => props.abierto, (abierto) => {
   if (!abierto) return
   errores.value = {}
@@ -252,14 +232,11 @@ watch(() => props.abierto, (abierto) => {
   }
 })
 
-// Limpiar claves_prohibidas al cambiar de tipo
 watch(() => form.value.tipo, () => {
   if (!necesitaClavesProhibidas.value) {
     form.value.claves_prohibidas = []
   }
 })
-
-// ── Métodos ───────────────────────────────────────────────────────────────────
 
 function validar(): boolean {
   errores.value = {}
@@ -277,8 +254,12 @@ function guardar() {
 
   const grupoFinal = form.value.grupo === '__custom__' ? grupoCustom.value.trim() : form.value.grupo
 
+  const base = props.casoInicial
+    ? { ...props.casoInicial }
+    : crearCasoVacio(grupoFinal)
+
   const caso: CasoEvaluacion = {
-    id:                props.casoInicial?.id ?? generarId(),
+    ...base,
     grupo:             grupoFinal,
     tipo:              form.value.tipo,
     pregunta:          form.value.pregunta.trim(),

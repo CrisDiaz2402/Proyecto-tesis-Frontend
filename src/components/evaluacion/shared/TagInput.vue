@@ -1,9 +1,4 @@
 <!-- src/components/evaluacion/shared/TagInput.vue -->
-<!--
-  Input de etiquetas (chips) reutilizable.
-  El usuario escribe una clave, presiona Enter o coma, y se añade como chip.
-  Cada chip tiene un botón para eliminarlo individualmente.
--->
 <template>
   <div class="flex flex-col gap-1.5">
 
@@ -14,7 +9,6 @@
 
     <p v-if="descripcion" class="text-[11px] text-gray-500 leading-relaxed">{{ descripcion }}</p>
 
-    <!-- Área de chips + input -->
     <div
       :class="[
         'min-h-[42px] flex flex-wrap gap-1.5 px-3 py-2 bg-gray-900 border rounded-lg cursor-text transition-colors',
@@ -23,7 +17,6 @@
       ]"
       @click="focusInput"
     >
-      <!-- Chips existentes -->
       <span
         v-for="(tag, i) in modelValue"
         :key="i"
@@ -44,7 +37,6 @@
         </button>
       </span>
 
-      <!-- Input invisible integrado -->
       <input
         ref="inputRef"
         v-model="inputVal"
@@ -69,7 +61,7 @@
 
 <script setup lang="ts">
 import { ref } from 'vue'
-import { Icon } from '@iconify/vue'
+
 
 const props = withDefaults(defineProps<{
   modelValue:   string[]

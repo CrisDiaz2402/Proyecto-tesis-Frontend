@@ -1,13 +1,8 @@
 <!-- src/components/evaluacion/Reporte/ReporteGraficas.vue -->
-<!--
-  Gráficas del reporte:
-  1. Barras horizontales — score promedio por grupo (diagnóstico principal)
-  2. Dona — distribución PASS / PARCIAL / FAIL global
--->
+
 <template>
   <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
 
-    <!-- Barras por grupo -->
     <div class="bg-gray-800 border border-gray-700 rounded-xl p-5">
       <div class="flex items-center gap-2 mb-4">
         <Icon icon="mdi:chart-bar" class="text-blue-400 text-lg" />
@@ -16,7 +11,6 @@
       <Bar :data="barData" :options="barOptions" class="max-h-64" />
     </div>
 
-    <!-- Dona PASS / PARCIAL / FAIL -->
     <div class="bg-gray-800 border border-gray-700 rounded-xl p-5 flex flex-col">
       <div class="flex items-center gap-2 mb-4">
         <Icon icon="mdi:chart-donut" class="text-blue-400 text-lg" />
@@ -24,7 +18,6 @@
       </div>
       <div class="flex-1 flex items-center justify-center gap-8">
         <Doughnut :data="donutData" :options="donutOptions" class="max-h-52 max-w-52" />
-        <!-- Leyenda manual para mayor control visual -->
         <div class="flex flex-col gap-3">
           <div v-for="item in leyendaDonut" :key="item.label" class="flex items-center gap-2">
             <div class="w-3 h-3 rounded-full shrink-0" :style="{ backgroundColor: item.color }"></div>
@@ -42,7 +35,7 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
-import { Icon } from '@iconify/vue'
+
 import {
   Chart as ChartJS,
   ArcElement,
@@ -61,12 +54,11 @@ const props = defineProps<{
   resultado: ResultadoEvaluacion
 }>()
 
-// ─── Paleta de colores por grupo ──────────────────────────────────────────────
 
 function colorPorScore(score: number): string {
-  if (score >= 0.85) return 'rgba(52, 211, 153, 0.85)'   // emerald
-  if (score >= 0.65) return 'rgba(251, 191, 36, 0.85)'   // yellow
-  return 'rgba(248, 113, 113, 0.85)'                     // red
+  if (score >= 0.85) return 'rgba(52, 211, 153, 0.85)'   
+  if (score >= 0.65) return 'rgba(251, 191, 36, 0.85)'   
+  return 'rgba(248, 113, 113, 0.85)'                    
 }
 
 function colorBordePorScore(score: number): string {
@@ -74,8 +66,6 @@ function colorBordePorScore(score: number): string {
   if (score >= 0.65) return 'rgb(251, 191, 36)'
   return 'rgb(248, 113, 113)'
 }
-
-// ─── Datos para las barras horizontales ───────────────────────────────────────
 
 const barData = computed(() => {
   const grupos  = Object.keys(props.resultado.resumen_por_grupo)
@@ -121,8 +111,6 @@ const barOptions = computed(() => ({
     },
   },
 }))
-
-// ─── Datos para la dona ───────────────────────────────────────────────────────
 
 const donutData = computed(() => ({
   labels: ['PASS', 'PARCIAL', 'FAIL'],

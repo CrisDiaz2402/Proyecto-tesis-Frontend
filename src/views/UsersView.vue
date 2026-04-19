@@ -1,13 +1,13 @@
 <template>
-  <div class="p-8">
-    <div class="flex items-center justify-between mb-8">
+  <div class="p-4 sm:p-6 lg:p-8">
+    <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mb-8">
       <div>
         <h1 class="text-2xl font-bold text-white">Administradores</h1>
         <p class="text-gray-400 text-sm mt-1">Gestión de usuarios con acceso al panel</p>
       </div>
       <button
         @click="abrirModalCrear"
-        class="flex items-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-500 text-white text-sm font-semibold rounded-lg transition-colors"
+        class="flex items-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-500 text-white text-sm font-semibold rounded-lg transition-colors w-full sm:w-auto justify-center"
       >
         <Icon icon="mdi:plus" class="text-lg" />
         Nuevo usuario
@@ -29,7 +29,7 @@
             <tr class="bg-gray-900/50">
               <th class="px-6 py-4 text-xs font-bold text-gray-400 uppercase tracking-wider">Usuario</th>
               <th class="px-6 py-4 text-xs font-bold text-gray-400 uppercase tracking-wider">Rol</th>
-              <th class="px-6 py-4 text-xs font-bold text-gray-400 uppercase tracking-wider">Fecha Creación</th>
+              <th class="px-6 py-4 text-xs font-bold text-gray-400 uppercase tracking-wider hidden sm:table-cell">Fecha Creación</th>
               <th class="px-6 py-4 text-xs font-bold text-gray-400 uppercase tracking-wider text-right">Acciones</th>
             </tr>
           </thead>
@@ -48,7 +48,7 @@
                   {{ user.rol }}
                 </span>
               </td>
-              <td class="px-6 py-4 text-sm text-gray-400">
+              <td class="px-6 py-4 text-sm text-gray-400 hidden sm:table-cell">
                 {{ new Date(user.fecha_creacion).toLocaleDateString() }}
               </td>
               <td class="px-6 py-4 text-right">
@@ -156,7 +156,7 @@
 
 <script setup lang="ts">
 import { ref, onMounted, reactive } from 'vue'
-import { Icon } from '@iconify/vue'
+
 import { toast } from 'vue3-toastify'
 import { useAuthStore } from '@/stores/auth'
 import AppConfirmModal from '@/components/ui/AppConfirmModal.vue'
@@ -169,11 +169,7 @@ import {
 } from '@/services/backendService'
 
 const authStore = useAuthStore()
-
-// ── Estado de la Tabla ──
 const usuarios = ref<Usuario[]>([])
-
-// ── Estado del Modal de Formulario (Crear/Editar) ──
 const modalAbierto    = ref(false)
 const modoEdicion     = ref(false)
 const usuarioEditando = ref<Usuario | null>(null)
@@ -186,14 +182,12 @@ const form = ref({
   password: ''
 })
 
-// ── Estado del Modal de Confirmación ──
 const confirmModal = reactive({
   show: false,
   loading: false,
   user: null as Usuario | null
 })
 
-// ── Carga de Datos ──
 const cargarUsuarios = async () => {
   try {
     usuarios.value = await obtenerUsuarios()
@@ -204,7 +198,6 @@ const cargarUsuarios = async () => {
 
 onMounted(cargarUsuarios)
 
-// ── Lógica de Formulario ──
 const abrirModalCrear = () => {
   modoEdicion.value     = false
   usuarioEditando.value = null

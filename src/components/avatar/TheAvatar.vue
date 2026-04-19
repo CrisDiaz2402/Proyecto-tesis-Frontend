@@ -8,7 +8,6 @@ import { useGLTF, useAnimations } from '@tresjs/cientos';
 import { useLoop } from '@tresjs/core';
 import * as THREE from 'three';
 
-// --- DEFINICIÓN DE PROPS ---
 const props = defineProps<{
   isSpeaking: boolean
 }>();
@@ -16,24 +15,19 @@ const props = defineProps<{
 const model = shallowRef<THREE.Object3D | null>(null);
 let faceMesh: THREE.Mesh | undefined;
 
-// --- 1. CARGA DEL MODELO ---
 const response = await useGLTF('/avatar.glb') as any;
 const gltfData = response.state?.value || response; 
 const sceneObject = gltfData.scene || gltfData.scenes?.[0];
 const animations = gltfData.animations || [];
 
 if (sceneObject) {
-  // --- LINEA SALVADORA ---
-  // Si el modelo trae un fondo configurado, lo eliminamos para usar el del CSS
   sceneObject.background = null; 
-
   model.value = sceneObject;
   model.value!.traverse((child: any) => {
     if (child.isMesh) {
       child.castShadow = true;
       child.receiveShadow = true;
       
-      // Aseguramos que el material no sea transparente para evitar conflictos de profundidad
       if (child.material) {
         child.material.transparent = false;
         child.material.depthWrite = true;
@@ -48,7 +42,6 @@ if (sceneObject) {
   });
 }
 
-// --- 2. ANIMACIÓN ESQUELÉTICA ---
 const { actions } = useAnimations(animations, model);
 watch(actions, (newActions) => {
   if (!newActions) return;
@@ -62,7 +55,6 @@ watch(actions, (newActions) => {
   }
 }, { immediate: true });
 
-// --- 3. ANIMACIÓN FACIAL CONTROLADA ---
 const { onBeforeRender } = useLoop();
 
 onBeforeRender(({ elapsed }) => {
@@ -78,7 +70,7 @@ onBeforeRender(({ elapsed }) => {
         faceMesh.morphTargetInfluences[mouthIndex] = value;
       } else {
         faceMesh.morphTargetInfluences[mouthIndex] = THREE.MathUtils.lerp(
-          faceMesh.morphTargetInfluences[mouthIndex], 
+          faceMesh.morphTargetInfluences[mouthIndex] ?? 0, 
           0, 
           0.1
         );

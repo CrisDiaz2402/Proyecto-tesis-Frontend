@@ -1,10 +1,6 @@
 // src/services/exportService.ts
 import type { ResultadoEvaluacion } from '@/services/backendService'
 
-// ─────────────────────────────────────────────────────────────────────────────
-// HELPERS
-// ─────────────────────────────────────────────────────────────────────────────
-
 function colorVeredicto(v: string): string {
   if (v === 'PASS')    return '#10b981'
   if (v === 'PARCIAL') return '#f59e0b'
@@ -36,17 +32,12 @@ function fmtFecha(iso: string): string {
   })
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// GENERADOR DE HTML
-// ─────────────────────────────────────────────────────────────────────────────
-
 function generarHTML(r: ResultadoEvaluacion): string {
   const pct      = Math.round(r.score_global * 100)
   const nivel    = nivelScore(pct)
   const scoreClr = colorScore(pct)
   const fecha    = fmtFecha(r.timestamp)
 
-  // ── Resumen por grupo ──────────────────────────────────────────────────────
   const filasGrupo = Object.entries(r.resumen_por_grupo).map(([grupo, g]: [string, any]) => `
     <tr>
       <td>${grupo}</td>
@@ -57,7 +48,6 @@ function generarHTML(r: ResultadoEvaluacion): string {
       <td style="text-align:center">${g.total}</td>
     </tr>`).join('')
 
-  // ── Detalle caso a caso ────────────────────────────────────────────────────
   const filasCasos = r.resultados.map(caso => `
     <tr>
       <td style="font-family:monospace; font-size:11px">${caso.id}</td>
@@ -227,10 +217,6 @@ function generarHTML(r: ResultadoEvaluacion): string {
 </html>`
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// API PÚBLICA
-// ─────────────────────────────────────────────────────────────────────────────
-
 export function exportarHTML(resultado: ResultadoEvaluacion): void {
   const html     = generarHTML(resultado)
   const blob     = new Blob([html], { type: 'text/html;charset=utf-8' })
@@ -253,7 +239,7 @@ export function exportarCSV(resultado: ResultadoEvaluacion): void {
     }).join(',')
   )
   const csv  = [cabecera.join(','), ...filas].join('\n')
-  const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8' })  // BOM para Excel
+  const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8' })  
   const url  = URL.createObjectURL(blob)
   const a    = document.createElement('a')
   const fecha = new Date(resultado.timestamp).toISOString().slice(0, 16).replace('T', '_').replace(':', '-')

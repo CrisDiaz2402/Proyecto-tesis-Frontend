@@ -1,9 +1,4 @@
 <!-- src/components/evaluacion/BancoPreguntas/CasoItem.vue -->
-<!--
-  Una fila de la lista de casos de evaluación.
-  Muestra: badge grupo, badge tipo, pregunta truncada, claves, acciones.
-  El toggle de habilitado cambia el estado sin abrir el modal.
--->
 <template>
   <div
     :class="[
@@ -13,8 +8,6 @@
         : 'bg-gray-900/40 border-gray-700/40 opacity-50',
     ]"
   >
-
-    <!-- Toggle habilitado -->
     <button
       type="button"
       :title="caso.habilitado ? 'Deshabilitar caso' : 'Habilitar caso'"
@@ -29,28 +22,19 @@
       <Icon icon="mdi:check" class="text-xs" />
     </button>
 
-    <!-- Contenido principal -->
     <div class="flex-1 min-w-0 flex flex-col gap-2">
-
-      <!-- Fila superior: badges + ID -->
       <div class="flex items-center gap-2 flex-wrap">
         <span class="text-[10px] font-bold text-gray-500 font-mono">{{ caso.id }}</span>
-
-        <!-- Badge grupo -->
         <span :class="['px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wide', colorGrupo]">
           {{ caso.grupo }}
         </span>
-
-        <!-- Badge tipo -->
         <span :class="['px-2 py-0.5 rounded-full text-[10px] font-semibold border', colorTipo]">
           {{ caso.tipo }}
         </span>
       </div>
 
-      <!-- Pregunta -->
       <p class="text-sm text-gray-200 leading-snug line-clamp-2">{{ caso.pregunta }}</p>
 
-      <!-- Claves -->
       <div class="flex flex-wrap gap-1">
         <span
           v-for="(clave, i) in caso.claves.slice(0, 5)"
@@ -65,7 +49,6 @@
         >
           +{{ caso.claves.length - 5 }} más
         </span>
-        <!-- Claves prohibidas (si las hay) -->
         <template v-if="caso.claves_prohibidas.length > 0">
           <span class="text-[10px] text-gray-600 self-center">|</span>
           <span
@@ -84,14 +67,12 @@
         </template>
       </div>
 
-      <!-- Descripción (si existe) -->
       <p v-if="caso.descripcion" class="text-[11px] text-gray-500 italic leading-relaxed">
         {{ caso.descripcion }}
       </p>
 
     </div>
 
-    <!-- Acciones -->
     <div class="flex items-center gap-1 shrink-0">
       <button
         type="button"
@@ -116,7 +97,7 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
-import { Icon } from '@iconify/vue'
+
 import type { CasoEvaluacion } from '@/services/backendService'
 
 const props = defineProps<{

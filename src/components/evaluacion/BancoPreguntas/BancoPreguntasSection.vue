@@ -1,14 +1,9 @@
 <!-- src/components/evaluacion/BancoPreguntas/BancoPreguntasSection.vue -->
-<!--
-  Sección A del Evaluador RAG.
-  Gestiona el banco de preguntas: CRUD local (localStorage),
-  filtro por grupo, y el botón para lanzar la evaluación.
--->
 <template>
   <div class="bg-gray-800 border border-gray-700 rounded-xl overflow-hidden">
 
     <!-- Header de la sección -->
-    <div class="px-6 py-4 border-b border-gray-700 flex items-center justify-between gap-4">
+    <div class="px-4 sm:px-6 py-4 border-b border-gray-700 flex flex-wrap items-center justify-between gap-3">
       <div class="flex items-center gap-2">
         <Icon icon="mdi:format-list-checks" class="text-blue-400 text-xl" />
         <div>
@@ -19,6 +14,19 @@
         </div>
       </div>
       <div class="flex items-center gap-2">
+        <button
+          @click="deshacerCambio"
+          :disabled="!canUndo"
+          title="Deshacer último cambio"
+          :class="[
+            'p-2 rounded-lg transition-all',
+            canUndo
+              ? 'text-gray-500 hover:text-blue-400 hover:bg-blue-400/10'
+              : 'text-gray-700 cursor-not-allowed',
+          ]"
+        >
+          <Icon icon="mdi:undo" class="text-lg" />
+        </button>
         <button
           @click="resetearBanco"
           title="Restaurar casos por defecto"
@@ -36,10 +44,8 @@
       </div>
     </div>
 
-    <!-- Etiqueta del experimento + filtros -->
-    <div class="px-6 py-3 border-b border-gray-700/50 flex flex-wrap items-center gap-3">
+    <div class="px-4 sm:px-6 py-3 border-b border-gray-700/50 flex flex-wrap items-center gap-3">
 
-      <!-- Nombre del experimento -->
       <div class="flex items-center gap-2 flex-1 min-w-[200px]">
         <label class="text-xs text-gray-500 whitespace-nowrap">Experimento:</label>
         <input
@@ -51,7 +57,6 @@
         />
       </div>
 
-      <!-- Filtro por grupo -->
       <div class="flex items-center gap-2">
         <label class="text-xs text-gray-500">Filtrar:</label>
         <select
@@ -65,7 +70,6 @@
 
     </div>
 
-    <!-- Lista de casos -->
     <div class="p-4 flex flex-col gap-2 max-h-[520px] overflow-y-auto">
 
       <p v-if="casosFiltrados.length === 0" class="text-center text-gray-500 text-sm py-8">
@@ -83,10 +87,8 @@
 
     </div>
 
-    <!-- Footer: botón de lanzar -->
-    <div class="px-6 py-4 border-t border-gray-700 flex items-center justify-between gap-4">
+    <div class="px-4 sm:px-6 py-4 border-t border-gray-700 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
 
-      <!-- Info de motor -->
       <div class="flex items-center gap-2 text-xs text-gray-500">
         <Icon icon="mdi:information-outline" class="text-gray-600" />
         <span>Motor activo:
@@ -94,12 +96,11 @@
         </span>
       </div>
 
-      <!-- Botón lanzar -->
       <button
         @click="lanzar"
         :disabled="casosHabilitados === 0 || evaluando"
         :class="[
-          'flex items-center gap-2 px-6 py-2.5 text-sm font-bold rounded-lg transition-all shadow-lg',
+          'flex items-center justify-center gap-2 px-6 py-2.5 text-sm font-bold rounded-lg transition-all shadow-lg w-full sm:w-auto',
           casosHabilitados === 0 || evaluando
             ? 'bg-gray-700 text-gray-500 cursor-not-allowed'
             : 'bg-emerald-600 hover:bg-emerald-500 text-white shadow-emerald-900/30',
@@ -114,7 +115,6 @@
 
   </div>
 
-  <!-- Modal crear/editar -->
   <CasoModal
     :abierto="modalAbierto"
     :caso-inicial="casoEditando"
@@ -122,7 +122,6 @@
     @guardar="onGuardarCaso"
   />
 
-  <!-- Modal confirmación eliminar -->
   <AppConfirmModal
     :isOpen="confirmEliminar.show"
     title="Eliminar caso"
@@ -138,14 +137,13 @@
 
 <script setup lang="ts">
 import { ref, computed, reactive } from 'vue'
-import { Icon } from '@iconify/vue'
+
 import type { CasoEvaluacion } from '@/services/backendService'
-import { cargarBanco, guardarBanco, CASOS_DEFAULT } from '@/types/evaluacion'
+import { cargarBanco, guardarBanco, CASOS_DEFAULT, clonarCaso } from '@/types/evaluacion'
+import { useBancoHistory } from '@/composables/useBancoHistory'
 import CasoItem from './CasoItem.vue'
 import CasoModal from './CasoModal.vue'
 import AppConfirmModal from '@/components/ui/AppConfirmModal.vue'
-
-// ── Props / Emits ──────────────────────────────────────────────────────────────
 
 const props = defineProps<{
   experimento:  string
@@ -158,16 +156,13 @@ const emit = defineEmits<{
   lanzar: [casos: CasoEvaluacion[], experimento: string]
 }>()
 
-// ── Estado ────────────────────────────────────────────────────────────────────
-
 const casos       = ref<CasoEvaluacion[]>(cargarBanco())
+const { canUndo, undo, pushSnapshot } = useBancoHistory(casos.value)
 const filtroGrupo = ref('')
 const modalAbierto = ref(false)
 const casoEditando = ref<CasoEvaluacion | null>(null)
 
 const confirmEliminar = reactive({ show: false, id: '' })
-
-// ── Computadas ────────────────────────────────────────────────────────────────
 
 const casosHabilitados = computed(() => casos.value.filter(c => c.habilitado).length)
 
@@ -180,8 +175,6 @@ const casosFiltrados = computed(() =>
     ? casos.value.filter(c => c.grupo === filtroGrupo.value)
     : casos.value,
 )
-
-// ── CRUD local ────────────────────────────────────────────────────────────────
 
 function toggleHabilitado(id: string) {
   const idx = casos.value.findIndex(c => c.id === id)
@@ -208,6 +201,7 @@ function cerrarModal() {
 }
 
 function onGuardarCaso(caso: CasoEvaluacion) {
+  pushSnapshot(casos.value)
   const idx = casos.value.findIndex(c => c.id === caso.id)
   if (idx !== -1) {
     casos.value[idx] = caso   // editar existente
@@ -223,6 +217,7 @@ function confirmarEliminar(id: string) {
 }
 
 function ejecutarEliminar() {
+  pushSnapshot(casos.value)
   casos.value = casos.value.filter(c => c.id !== confirmEliminar.id)
   guardarBanco(casos.value)
   confirmEliminar.show = false
@@ -230,12 +225,19 @@ function ejecutarEliminar() {
 
 function resetearBanco() {
   if (confirm('¿Restaurar el banco de preguntas por defecto? Se perderán todos los cambios.')) {
-    casos.value = [...CASOS_DEFAULT.map(c => ({ ...c }))]
+    pushSnapshot(casos.value)
+    casos.value = CASOS_DEFAULT.map(c => clonarCaso(c))
     guardarBanco(casos.value)
   }
 }
 
-// ── Lanzar evaluación ─────────────────────────────────────────────────────────
+function deshacerCambio() {
+  const prev = undo()
+  if (prev) {
+    casos.value = prev
+    guardarBanco(casos.value)
+  }
+}
 
 function lanzar() {
   const activos = casos.value.filter(c => c.habilitado)

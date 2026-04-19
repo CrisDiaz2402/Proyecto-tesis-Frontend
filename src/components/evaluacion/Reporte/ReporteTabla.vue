@@ -1,13 +1,8 @@
 <!-- src/components/evaluacion/Reporte/ReporteTabla.vue -->
-<!--
-  Tabla detallada por caso.
-  Columnas: ID, grupo, tipo, pregunta, veredicto/score, latencia.
-  La respuesta del RAG se expande al hacer clic en la fila.
--->
 <template>
   <div class="bg-gray-800 border border-gray-700 rounded-xl overflow-hidden">
 
-    <div class="px-6 py-4 border-b border-gray-700 flex items-center justify-between">
+    <div class="px-4 sm:px-6 py-4 border-b border-gray-700 flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
       <div class="flex items-center gap-2">
         <Icon icon="mdi:table-large" class="text-blue-400 text-lg" />
         <h3 class="text-sm font-semibold text-white">Detalle por caso</h3>
@@ -30,7 +25,6 @@
         <tbody>
           <template v-for="r in resultado.resultados" :key="r.id">
 
-            <!-- Fila principal -->
             <tr
               @click="toggleExpandido(r.id)"
               :class="[
@@ -65,18 +59,15 @@
               </td>
             </tr>
 
-            <!-- Fila expandida: respuesta + detalle -->
             <tr v-if="expandido === r.id" class="bg-gray-700/20 border-b border-gray-700/50">
               <td colspan="6" class="px-6 py-4">
                 <div class="flex flex-col gap-3">
 
-                  <!-- Respuesta del RAG -->
                   <div>
                     <p class="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-1.5">Respuesta del RAG</p>
                     <p class="text-xs text-gray-300 leading-relaxed whitespace-pre-wrap bg-gray-900/50 rounded-lg px-4 py-3 border border-gray-700">{{ r.respuesta }}</p>
                   </div>
 
-                  <!-- Detalle de scoring -->
                   <div class="flex items-start gap-2">
                     <Icon
                       :icon="r.veredicto === 'PASS' ? 'mdi:check-circle' : r.veredicto === 'PARCIAL' ? 'mdi:alert-circle' : 'mdi:close-circle'"
@@ -104,7 +95,7 @@
 
 <script setup lang="ts">
 import { ref } from 'vue'
-import { Icon } from '@iconify/vue'
+
 import type { ResultadoEvaluacion, Veredicto } from '@/services/backendService'
 
 defineProps<{

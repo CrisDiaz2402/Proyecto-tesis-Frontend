@@ -1,23 +1,15 @@
 <!-- src/components/config/RagParamInput.vue -->
-<!--
-  Componente reutilizable para un parámetro RAG individual.
-  Muestra: label legible, descripción, rango, valor por defecto,
-  input numérico validado y error inline.
--->
 <template>
   <div class="flex flex-col gap-1.5">
 
-    <!-- Cabecera: label -->
     <div class="flex items-start">
       <label :for="inputId" class="text-xs font-semibold text-gray-300 leading-tight">
         {{ label }}
       </label>
     </div>
 
-    <!-- Descripción breve -->
     <p class="text-[11px] text-gray-500 leading-relaxed">{{ descripcion }}</p>
 
-    <!-- Input -->
     <div class="flex items-center">
       <div class="relative flex-1">
         <input
@@ -41,13 +33,11 @@
       </div>
     </div>
 
-    <!-- Error de validación -->
     <p v-if="errorMsg" class="text-[11px] text-red-400 flex items-center gap-1">
       <Icon icon="mdi:alert-circle-outline" class="shrink-0" />
       {{ errorMsg }}
     </p>
 
-    <!-- Recomendación -->
     <p v-if="recomendado && !errorMsg" class="text-[10px] text-blue-400/70">
       ✦ {{ recomendado }}
     </p>
@@ -57,7 +47,7 @@
 
 <script setup lang="ts">
 import { computed, ref } from 'vue'
-import { Icon } from '@iconify/vue'
+
 
 const props = defineProps<{
   modelValue: number
@@ -68,7 +58,6 @@ const props = defineProps<{
   tipoCampo: 'int' | 'float'
   valorDefault: number
   recomendado?: string
-  /** ID único para el label/input — normalmente la clave del parámetro */
   paramKey: string
 }>()
 
@@ -122,7 +111,6 @@ function onBlur(event: Event) {
   emit('validation-error', !!error)
 }
 
-// Exponer para que el padre pueda forzar validación antes de guardar
 defineExpose({
   validar: () => {
     const { error } = validar(String(props.modelValue))

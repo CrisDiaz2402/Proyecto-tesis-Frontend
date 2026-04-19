@@ -29,7 +29,6 @@
         ]"
       />
 
-      <!-- Toggle para password -->
       <button
         v-if="isPassword"
         type="button"
@@ -39,7 +38,6 @@
         <Icon :icon="verPassword ? 'mdi:eye-off-outline' : 'mdi:eye-outline'" class="text-lg" />
       </button>
 
-      <!-- Ícono derecho genérico (si no es password) -->
       <Icon
         v-else-if="iconRight"
         :icon="iconRight"
@@ -57,7 +55,7 @@
 
 <script setup lang="ts">
 import { ref, computed } from 'vue'
-import { Icon } from '@iconify/vue'
+
 
 const props = withDefaults(defineProps<{
   modelValue?:  string

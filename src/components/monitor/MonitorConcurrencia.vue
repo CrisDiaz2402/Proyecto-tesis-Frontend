@@ -2,8 +2,7 @@
 <template>
   <div class="flex flex-col gap-6">
 
-    <!-- ── Métricas globales ──────────────────────────────────────────────── -->
-    <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
       <div
         v-for="m in metricas"
         :key="m.label"
@@ -19,7 +18,6 @@
       </div>
     </div>
 
-    <!-- ── Usuarios conectados ahora (sesiones WebSocket abiertas) ────────── -->
     <div class="bg-gray-800 border border-gray-700 rounded-xl overflow-hidden">
       <div class="px-6 py-4 border-b border-gray-700 flex items-center gap-2">
         <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shrink-0"></span>
@@ -62,7 +60,6 @@
       </div>
     </div>
 
-    <!-- ── Consultas en proceso ahora mismo ──────────────────────────────── -->
     <div class="bg-gray-800 border border-gray-700 rounded-xl overflow-hidden">
       <div class="px-6 py-4 border-b border-gray-700 flex items-center gap-2">
         <span class="w-2 h-2 rounded-full bg-blue-500 animate-pulse shrink-0"></span>
@@ -95,7 +92,6 @@
       </div>
     </div>
 
-    <!-- ── Historial reciente ─────────────────────────────────────────────── -->
     <div class="bg-gray-800 border border-gray-700 rounded-xl overflow-hidden">
       <div class="px-6 py-4 border-b border-gray-700 flex items-center gap-2">
         <Icon icon="mdi:history" class="text-gray-400 text-lg" />
@@ -150,9 +146,24 @@
       </div>
     </div>
 
-    <!-- ── Banner de error / sin token ───────────────────────────────────── -->
     <div
-      v-if="errorConexion"
+      v-if="!conectado && !errorConexion"
+      class="flex items-center gap-3 bg-yellow-500/10 border border-yellow-500/20 rounded-xl p-4 text-yellow-300 text-sm"
+    >
+      <Icon icon="mdi:loading" class="text-xl shrink-0 animate-spin" />
+      <span>Conectando al monitor en tiempo real…</span>
+    </div>
+
+    <div
+      v-else-if="conectado && !errorConexion"
+      class="flex items-center gap-3 bg-emerald-500/10 border border-emerald-500/20 rounded-xl p-4 text-emerald-300 text-sm"
+    >
+      <Icon icon="mdi:check-circle-outline" class="text-xl shrink-0" />
+      <span>Conectado al monitor en tiempo real</span>
+    </div>
+
+    <div
+      v-else-if="errorConexion"
       class="flex items-start gap-3 bg-red-500/10 border border-red-500/20 rounded-xl p-4 text-red-300 text-sm"
     >
       <Icon icon="mdi:wifi-off" class="text-xl shrink-0 mt-0.5" />
@@ -161,7 +172,6 @@
         <span v-if="errorMsg" class="text-xs text-red-400/80">{{ errorMsg }}</span>
         <span v-else class="text-xs text-red-400/80">Reconectando automáticamente...</span>
       </div>
-      <!-- Botón de reintento manual si la reconexión automática ya se agotó -->
       <button
         v-if="errorMsg && errorMsg.includes('varios intentos')"
         @click="conectar()"
@@ -176,28 +186,23 @@
 
 <script setup lang="ts">
 import { computed, onMounted } from 'vue'
-import { Icon } from '@iconify/vue'
+
 import { useMonitorWebSocket } from '@/composables/useWebSocket'
 import { getToken } from '@/services/authService'
 import { BACKEND_URL } from '@/config/config'
 
-// Convertir correctamente http → ws / https → wss
 const WS_BASE = BACKEND_URL.replace(/^https/, 'wss').replace(/^http/, 'ws')
 
-// Obtener token — si está vacío, useMonitorWebSocket lo detectará y reportará
 const token = getToken() ?? ''
 
 const { estado, conectado, errorConexion, errorMsg, conectar } =
   useMonitorWebSocket(WS_BASE, token)
 
 onMounted(() => {
-  // No conectar si no hay token — el composable ya pone errorConexion=true en ese caso
   if (token) {
     conectar()
   }
 })
-
-// ─── Helpers de tiempo ────────────────────────────────────────────────────────
 
 function tiempoTranscurrido(inicio: number): string {
   const seg = Date.now() / 1000 - inicio
@@ -215,8 +220,6 @@ function tiempoConectado(desde: number): string {
 function tieneConsultaActiva(clientId: string): boolean {
   return estado.value.activas.some(a => a.client_id === clientId)
 }
-
-// ─── Métricas de cabecera ─────────────────────────────────────────────────────
 
 const metricas = computed(() => [
   {

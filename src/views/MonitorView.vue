@@ -1,6 +1,6 @@
 <template>
-  <div class="p-8">
-    <div class="flex items-center justify-between mb-8">
+  <div class="p-4 sm:p-6 lg:p-8">
+    <div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between mb-8">
       <div>
         <h1 class="text-2xl font-bold text-white">Monitor de Usuarios</h1>
         <p class="text-gray-400 text-sm mt-1">Seguimiento en tiempo real de conexiones y consultas del sistema</p>

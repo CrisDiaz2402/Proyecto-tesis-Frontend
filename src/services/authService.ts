@@ -12,8 +12,6 @@ export interface LoginResponse {
   rol:          string
 }
 
-// ─── Llamada al backend ────────────────────────────────────────────────────────
-
 export async function loginAPI(username: string, password: string): Promise<LoginResponse> {
   const res = await fetch(`${BACKEND_URL}/api/auth/login`, {
     method:  'POST',
@@ -28,8 +26,6 @@ export async function loginAPI(username: string, password: string): Promise<Logi
 
   return res.json()
 }
-
-// ─── Gestión del token en localStorage ────────────────────────────────────────
 
 export function guardarSesion(data: LoginResponse): void {
   localStorage.setItem(TOKEN_KEY,    data.access_token)
@@ -58,8 +54,6 @@ export function getRolGuardado(): string {
 export function hayTokenGuardado(): boolean {
   return !!localStorage.getItem(TOKEN_KEY)
 }
-
-// ─── Header listo para usar en fetch ──────────────────────────────────────────
 
 export function getAuthHeaders(): Record<string, string> {
   const token = getToken()

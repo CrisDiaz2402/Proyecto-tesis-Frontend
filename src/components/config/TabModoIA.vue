@@ -1,8 +1,4 @@
 <!-- src/components/config/TabModoIA.vue -->
-<!--
-  Sección de selección del modo de inferencia IA (local:local / cloud:cloud / local:cloud).
-  Extraída de ConfiguracionView para mantener el código modular.
--->
 <template>
   <div>
 
@@ -21,13 +17,11 @@
 
       <div class="p-6">
 
-        <!-- Cargando -->
         <div v-if="cargando" class="flex justify-center py-10">
           <Icon icon="mdi:loading" class="animate-spin text-5xl text-blue-500" />
         </div>
 
-        <!-- 3 tarjetas de modo -->
-        <div v-else class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
+        <div v-else class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
           <label
             v-for="modo in MODOS_IA"
             :key="modo.id"
@@ -69,7 +63,6 @@
           </label>
         </div>
 
-        <!-- Botón guardar -->
         <div class="flex justify-end pt-5 border-t border-gray-700">
           <button
             @click="guardar"
@@ -89,7 +82,7 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
-import { Icon } from '@iconify/vue'
+
 import { toast } from 'vue3-toastify'
 import {
   obtenerConfiguracionIA,

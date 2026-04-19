@@ -5,25 +5,21 @@ import { useAvatarStore } from '@/stores/avatar'
 export function useSpeech() {
   const store = useAvatarStore()
 
-  // Usamos refs para que sean accesibles fuera del onMounted de forma segura
   const synthRef = ref<SpeechSynthesis | null>(null)
   let vocesDisponibles: SpeechSynthesisVoice[] = []
   let recognition: any = null
   let textoVozCapturado = ''
 
-  // ─── Flags de soporte del navegador ──────────────────────────────────────────
   const soportaSynthesis  = ref(false)
   const soportaRecognition = ref(false)
 
   onMounted(() => {
-    // ─── INICIALIZACIÓN DE SPEECH SYNTHESIS ─────────────────────────────────
     if (!('speechSynthesis' in window)) {
       console.warn('[useSpeech] SpeechSynthesis no está soportado en este navegador.')
     } else {
       synthRef.value = window.speechSynthesis
       soportaSynthesis.value = true
 
-      // CORRECCIÓN: era synth.getVoces() — el método correcto es getVoices()
       const cargarVoces = () => {
         try {
           vocesDisponibles = synthRef.value!.getVoices()
@@ -35,13 +31,11 @@ export function useSpeech() {
 
       cargarVoces()
 
-      // onvoiceschanged se dispara cuando el navegador termina de cargar las voces
       if (synthRef.value.onvoiceschanged !== undefined) {
         synthRef.value.onvoiceschanged = cargarVoces
       }
     }
 
-    // ─── INICIALIZACIÓN DE SPEECH RECOGNITION ───────────────────────────────
     const SpeechRecognition =
       (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition
 
@@ -67,7 +61,6 @@ export function useSpeech() {
         }
 
         recognition.onend = () => {
-          // El recognition puede terminar solo (timeout, etc.) — asegurar estado consistente
           if (store.estaEscuchando) {
             store.setEscuchando(false)
           }
@@ -79,8 +72,6 @@ export function useSpeech() {
       }
     }
   })
-
-  // ─── FUNCIONES PÚBLICAS ───────────────────────────────────────────────────────
 
   function hablar(texto: string): void {
     if (!soportaSynthesis.value || !synthRef.value) {
@@ -116,18 +107,13 @@ export function useSpeech() {
     }
   }
 
-  /**
-   * Inicia la escucha por micrófono.
-   * Devuelve una función "detener" que al llamarse detiene la escucha
-   * y pasa el texto capturado al callback.
-   */
   function iniciarEscucha(): (callback: (texto: string) => void) => void {
     if (!soportaRecognition.value || !recognition) {
       console.warn('[useSpeech] SpeechRecognition no disponible.')
       return () => {}
     }
 
-    interrumpir() // detener síntesis si está hablando
+    interrumpir() 
     textoVozCapturado = ''
     store.setEscuchando(true)
 
@@ -191,21 +177,18 @@ export function useSpeech() {
 
   function formatearTextoParaVoz(texto: string): string {
     return texto
-      .replace(/\*\*(.*?)\*\*/g, '$1')                              // **bold** → text
-      .replace(/\*(.*?)\*/g, '$1')                                  // *italic* → text
-      .replace(/#+\s/g, '')                                         // # headers → text
-      .replace(/[^\w\s.,;:!?ñÑáéíóúÁÉÍÓÚüÜ]/g, '')               // solo caracteres seguros
+      .replace(/\*\*(.*?)\*\*/g, '$1')                           
+      .replace(/\*(.*?)\*/g, '$1')                                 
+      .replace(/#+\s/g, '')                                         
+      .replace(/[^\w\s.,;:!?ñÑáéíóúÁÉÍÓÚüÜ]/g, '')               
       .trim()
   }
 
   return {
-    // Estado (del store)
     estaHablando:     store.estaHablando,
     estaEscuchando:   store.estaEscuchando,
-    // Flags de soporte
     soportaSynthesis,
     soportaRecognition,
-    // Funciones
     hablar,
     iniciarEscucha,
     detenerEscucha,

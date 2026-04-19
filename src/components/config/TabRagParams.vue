@@ -1,11 +1,4 @@
 <!-- src/components/config/TabRagParams.vue -->
-<!--
-  Sección de configuración de parámetros RAG esenciales.
-  Solo incluye los 4 parámetros que realmente impactan la calidad:
-  - umbral_relevancia_local/cloud (filtros de relevancia)
-  - rag_k_local/cloud (número de fragmentos a recuperar)
-  Los demás parámetros fueron simplificados y hardcodeados en el backend.
--->
 <template>
   <div>
 
@@ -16,12 +9,10 @@
       </p>
     </div>
 
-    <!-- Estado de carga -->
     <div v-if="cargando" class="flex justify-center py-16">
       <Icon icon="mdi:loading" class="animate-spin text-5xl text-blue-500" />
     </div>
 
-    <!-- Error de carga -->
     <div v-else-if="errorCarga" class="bg-red-500/10 border border-red-500/30 rounded-xl p-6 flex items-start gap-3">
       <Icon icon="mdi:alert-circle-outline" class="text-red-400 text-xl shrink-0 mt-0.5" />
       <div>
@@ -33,10 +24,8 @@
       </div>
     </div>
 
-    <!-- Contenido principal -->
     <div v-else class="flex flex-col gap-5">
 
-      <!-- ── Advertencia de reindexado pendiente ─────────────────────────────── -->
       <div
         v-if="advertencias.length"
         class="bg-amber-500/10 border border-amber-500/30 rounded-xl p-4 flex items-start gap-3"
@@ -53,7 +42,6 @@
         </button>
       </div>
 
-      <!-- ── Log de acciones de limpieza ────────────────────────────────────── -->
       <div
         v-if="accionesLimpieza.length"
         class="bg-blue-500/10 border border-blue-500/20 rounded-xl p-4 flex items-start gap-3"
@@ -70,9 +58,6 @@
         </div>
       </div>
 
-      <!-- ══════════════════════════════════════════════════════════════════════ -->
-      <!-- PARÁMETROS RAG ESENCIALES                                             -->
-      <!-- ══════════════════════════════════════════════════════════════════════ -->
       <div class="bg-gray-800 border border-gray-700 rounded-xl overflow-hidden">
         <div class="px-5 py-3.5 border-b border-gray-700 flex items-center gap-2.5 bg-blue-500/5">
           <div class="w-2 h-2 rounded-full bg-blue-400 shrink-0"></div>
@@ -80,9 +65,8 @@
           <span class="text-xs text-gray-500 ml-1">— los únicos que afectan significativamente la calidad RAG</span>
         </div>
 
-        <div class="p-5 grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
+        <div class="p-5 grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-6">
 
-          <!-- Umbral de relevancia local -->
           <RagParamInput
             v-if="form && limites && defaults"
             param-key="umbral_relevancia_local"
@@ -97,7 +81,6 @@
             @validation-error="registrarError('umbral_relevancia_local', $event)"
           />
 
-          <!-- Umbral de relevancia cloud -->
           <RagParamInput
             v-if="form && limites && defaults"
             param-key="umbral_relevancia_cloud"
@@ -112,7 +95,6 @@
             @validation-error="registrarError('umbral_relevancia_cloud', $event)"
           />
 
-          <!-- K local -->
           <RagParamInput
             v-if="form && limites && defaults"
             param-key="rag_k_local"
@@ -127,7 +109,6 @@
             @validation-error="registrarError('rag_k_local', $event)"
           />
 
-          <!-- K cloud -->
           <RagParamInput
             v-if="form && limites && defaults"
             param-key="rag_k_cloud"
@@ -145,9 +126,6 @@
         </div>
       </div>
 
-      <!-- ══════════════════════════════════════════════════════════════════════ -->
-      <!-- PROMPT PRINCIPAL                                                       -->
-      <!-- ══════════════════════════════════════════════════════════════════════ -->
       <div class="bg-gray-800 border border-gray-700 rounded-xl p-6 space-y-4">
         <div class="flex items-start justify-between gap-4">
           <div>
@@ -216,10 +194,8 @@
         </div>
       </div>
 
-      <!-- ── Barra de acciones ─────────────────────────────────────────────── -->
-      <div class="flex items-center justify-between gap-4 pt-2 pb-4">
+      <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between pt-2 pb-4">
 
-        <!-- Botón Restablecer -->
         <button
           @click="confirmarReset = true"
           :disabled="guardando || reseteando"
@@ -229,7 +205,6 @@
           Restablecer valores por defecto
         </button>
 
-        <!-- Botón Guardar -->
         <button
           @click="guardar"
           :disabled="guardando || reseteando || hayErrores"
@@ -244,7 +219,6 @@
 
     </div>
 
-    <!-- ── Modal de confirmación para reset ───────────────────────────────── -->
     <div
       v-if="confirmarReset"
       class="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4"
@@ -284,7 +258,7 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
-import { Icon } from '@iconify/vue'
+
 import { toast } from 'vue3-toastify'
 import {
   obtenerRagParams,
@@ -296,7 +270,6 @@ import {
 } from '@/services/backendService'
 import RagParamInput from '@/components/config/RagParamInput.vue'
 
-// ── Estado ───────────────────────────────────────────────────────────────────
 const cargando      = ref(true)
 const guardando     = ref(false)
 const reseteando    = ref(false)
@@ -307,24 +280,20 @@ const form     = ref<RagParams | null>(null)
 const defaults = ref<RagParams | null>(null)
 const limites  = ref<Record<keyof RagParams, ParamLimit> | null>(null)
 
-// Advertencias y acciones de la última operación
 const advertencias    = ref<string[]>([])
 const accionesLimpieza = ref<string[]>([])
 
-// Estado del prompt principal
 const guardandoPrompt = ref(false)
 const promptPrincipal = ref('')
 const defaultPrompt   = ref('')
 const placeholderPrompt = 'Escribe aquí el prompt principal…'
 
-// Mapa de errores de validación por campo
 const erroresValidacion = ref<Record<string, boolean>>({})
 
 const hayErrores = computed(() =>
   Object.values(erroresValidacion.value).some(Boolean)
 )
 
-// Computadas para el prompt
 const estadoPrompt = computed<'defecto' | 'personalizado'>(() =>
   promptPrincipal.value.trim() !== defaultPrompt.value.trim() ? 'personalizado' : 'defecto'
 )
@@ -335,7 +304,6 @@ const puedoGuardarPrompt = computed(() => {
   return t.length >= 50 && t.includes('{contexto}') && t.includes('{pregunta}')
 })
 
-// ── Carga inicial ─────────────────────────────────────────────────────────────
 async function cargar() {
   cargando.value  = true
   errorCarga.value = ''
@@ -358,12 +326,10 @@ async function cargar() {
 
 onMounted(cargar)
 
-// ── Validación ────────────────────────────────────────────────────────────────
 function registrarError(campo: string, tieneError: boolean) {
   erroresValidacion.value[campo] = tieneError
 }
 
-// ── Guardar ───────────────────────────────────────────────────────────────────
 async function guardar() {
   if (!form.value) return
   if (hayErrores.value) {
@@ -399,7 +365,6 @@ async function guardar() {
   }
 }
 
-// ── Resetear ──────────────────────────────────────────────────────────────────
 async function resetear() {
   reseteando.value = true
   advertencias.value = []
@@ -426,8 +391,6 @@ async function resetear() {
     reseteando.value = false
   }
 }
-
-// ── Funciones para el prompt ──────────────────────────────────────────────────
 
 async function guardarPrompt() {
   if (!puedoGuardarPrompt.value) return

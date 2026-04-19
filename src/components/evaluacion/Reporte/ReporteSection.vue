@@ -1,14 +1,8 @@
 <!-- src/components/evaluacion/Reporte/ReporteSection.vue -->
-<!--
-  Sección B del Evaluador RAG — Reporte completo.
-  Orquesta los 3 subcomponentes: Header, Gráficas, Tabla.
-  Se muestra con animación slide-down cuando llegan los resultados.
--->
 <template>
   <Transition name="slide-down">
     <div v-if="resultado" class="flex flex-col gap-5">
 
-      <!-- Cabecera del reporte: botones de exportación + título -->
       <div class="flex items-center justify-between">
         <div class="flex items-center gap-2">
           <div class="w-1 h-5 bg-blue-500 rounded-full"></div>
@@ -32,7 +26,6 @@
         </div>
       </div>
 
-      <!-- Alerta si hay preguntas cacheadas -->
       <div
         v-if="alertaCaché"
         class="bg-yellow-500/10 border border-yellow-500/30 rounded-xl p-4 flex items-start gap-3"
@@ -47,13 +40,10 @@
         </div>
       </div>
 
-      <!-- 1. Header: score global + conteo + parámetros -->
       <ReporteHeader :resultado="resultado" />
 
-      <!-- 2. Gráficas -->
       <ReporteGraficas :resultado="resultado" />
 
-      <!-- 3. Tabla detallada -->
       <ReporteTabla :resultado="resultado" />
 
     </div>
@@ -62,7 +52,7 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
-import { Icon } from '@iconify/vue'
+
 import type { ResultadoEvaluacion } from '@/services/backendService'
 import ReporteHeader   from './ReporteHeader.vue'
 import ReporteGraficas from './ReporteGraficas.vue'

@@ -1,19 +1,12 @@
 // src/types/evaluacion.ts
-// Tipos locales del evaluador + banco de casos por defecto.
-// Los tipos de red (CasoEvaluacion, ResultadoEvaluacion, etc.)
-// viven en backendService.ts para mantener una sola fuente de verdad.
 
 import type { CasoEvaluacion } from '@/services/backendService'
-
-// ─── STORAGE ──────────────────────────────────────────────────────────────────
 
 export const STORAGE_KEY = 'rag_eval_banco_v1'
 
 export function generarId(): string {
   return Math.random().toString(36).substring(2, 8).toUpperCase()
 }
-
-// ─── GRUPOS PREDEFINIDOS ──────────────────────────────────────────────────────
 
 export const GRUPOS_PREDEFINIDOS = [
   'TP Directo',
@@ -23,8 +16,6 @@ export const GRUPOS_PREDEFINIDOS = [
   'Anti-alucinación',
   'Interpretación',
 ] as const
-
-// ─── BANCO DE CASOS POR DEFECTO (20 casos del script evaluar_local.py) ────────
 
 export const CASOS_DEFAULT: CasoEvaluacion[] = [
   // ── GRUPO A: Verdaderos positivos directos ──────────────────────────────────
@@ -172,8 +163,6 @@ export const CASOS_DEFAULT: CasoEvaluacion[] = [
   },
 ]
 
-// ─── PERSISTENCIA ─────────────────────────────────────────────────────────────
-
 export function cargarBanco(): CasoEvaluacion[] {
   try {
     const raw = localStorage.getItem(STORAGE_KEY)
@@ -185,4 +174,26 @@ export function cargarBanco(): CasoEvaluacion[] {
 
 export function guardarBanco(casos: CasoEvaluacion[]): void {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(casos))
+}
+
+export function crearCasoVacio(grupo: string): CasoEvaluacion {
+  return {
+    id:                generarId(),
+    grupo,
+    tipo:              'contiene',
+    pregunta:          '',
+    claves:            [],
+    claves_prohibidas: [],
+    descripcion:       '',
+    habilitado:        true,
+  }
+}
+
+export function clonarCaso(caso: CasoEvaluacion): CasoEvaluacion {
+  return {
+    ...caso,
+    id:                generarId(),
+    claves:            [...caso.claves],
+    claves_prohibidas: [...caso.claves_prohibidas],
+  }
 }

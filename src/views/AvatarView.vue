@@ -1,11 +1,11 @@
 <template>
   <div class="w-full h-screen bg-gray-900 relative select-none">
 
-    <div class="absolute top-5 left-5 z-10 flex flex-col gap-4 w-96">
+    <div class="absolute top-0 left-0 right-0 sm:right-auto sm:top-5 sm:left-5 z-10 flex flex-col gap-2 sm:gap-4 w-full sm:w-96 p-3 sm:p-0">
 
-      <div class="bg-gray-800/90 p-4 rounded-xl shadow-2xl border border-gray-700 backdrop-blur-sm">
-        <div class="flex flex-col gap-3">
-          <label class="text-blue-400 text-xs font-bold uppercase tracking-wider">
+      <div class="bg-gray-800/90 p-3 sm:p-4 rounded-xl shadow-2xl border border-gray-700 backdrop-blur-sm">
+        <div class="flex flex-col gap-2 sm:gap-3">
+          <label class="text-blue-400 text-[10px] sm:text-xs font-bold uppercase tracking-wider">
             Consultas: Carrera de Ciencias en la Computación
           </label>
 
@@ -54,10 +54,9 @@
         </div>
       </div>
 
-      <!-- Respuesta: muestra streaming token a token O respuesta completa -->
       <div
         v-if="store.respuestaBot || textoStreaming"
-        class="bg-white/95 p-4 rounded-xl shadow-xl border-l-4 border-blue-500 animate-bounce-in flex flex-col gap-3"
+        class="bg-white/95 p-3 sm:p-4 rounded-xl shadow-xl border-l-4 border-blue-500 animate-bounce-in flex flex-col gap-2 sm:gap-3 max-h-48 sm:max-h-none overflow-y-auto"
       >
         <div class="bg-blue-50/50 p-2.5 rounded-lg border border-blue-100">
           <p class="text-[10px] text-blue-500 font-bold mb-1 uppercase tracking-wide">Tú preguntaste:</p>
@@ -67,13 +66,11 @@
           <p class="text-[10px] text-gray-500 font-bold mb-1 uppercase tracking-wide">Asistente Virtual dice:</p>
           <p class="text-gray-800 text-sm leading-relaxed font-medium whitespace-pre-wrap">
             {{ textoStreaming || store.respuestaBot }}
-            <!-- Cursor parpadeante durante streaming -->
             <span v-if="wsEstado === 'generando'" class="inline-block w-0.5 h-4 bg-blue-500 animate-pulse ml-0.5 align-middle"></span>
           </p>
         </div>
       </div>
 
-      <!-- Indicadores de estado -->
       <div class="flex gap-2 flex-wrap">
         <span v-if="store.estaHablando" class="px-2 py-1 bg-green-500/20 text-green-400 text-xs rounded border border-green-500/50 flex items-center gap-1">
           <span class="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span> Hablando
@@ -94,13 +91,11 @@
           En espera
         </span>
 
-        <!-- Aviso si no hay soporte de voz -->
         <span v-if="!soportaSynthesis" class="px-2 py-1 bg-yellow-500/10 text-yellow-400 text-xs rounded border border-yellow-500/30 flex items-center gap-1" title="El navegador no soporta síntesis de voz">
           <Icon icon="mdi:volume-off" class="text-sm" /> Sin voz
         </span>
       </div>
 
-      <!-- Banner de error de WS con mensaje descriptivo -->
       <div
         v-if="wsEstado === 'error' && wsError"
         class="bg-red-500/10 border border-red-500/20 rounded-xl p-3 text-red-300 text-xs flex items-start gap-2"
@@ -134,15 +129,13 @@
 import { ref, watch, onMounted, computed } from 'vue'
 import { TresCanvas } from '@tresjs/core'
 import { OrbitControls } from '@tresjs/cientos'
-import { Icon } from '@iconify/vue'
+
 import TheAvatar from '@/components/avatar/TheAvatar.vue'
 import { useAvatarStore } from '@/stores/avatar'
 import { useSpeech } from '@/composables/useSpeech'
 import { useChatWebSocket } from '@/composables/useWebSocket'
 import { getToken } from '@/services/authService'
-import { BACKEND_URL } from '@/config/config'
-
-// ─── STORES Y COMPOSABLES ─────────────────────────────────────────────────────
+import { WS_BASE_URL } from '@/config/config'
 
 const store = useAvatarStore()
 const {
@@ -155,11 +148,6 @@ const {
   soportaRecognition,
 } = useSpeech()
 
-// ─── WEBSOCKET ────────────────────────────────────────────────────────────────
-
-// Convertir URL HTTP → WS  (http → ws, https → wss)
-const WS_BASE = BACKEND_URL.replace(/^https/, 'wss').replace(/^http/, 'ws')
-
 const {
   estado: wsEstado,
   tokenStream,
@@ -167,34 +155,21 @@ const {
   error: wsError,
   conectar: wsConectar,
   enviarPregunta: wsEnviarPregunta,
-  desconectar: wsDesconectar,
-} = useChatWebSocket(WS_BASE)
+} = useChatWebSocket(WS_BASE_URL)
 
-// Texto visible durante streaming
 const textoStreaming = computed(() => tokenStream.value)
 
-// ─── CICLO DE VIDA ────────────────────────────────────────────────────────────
-
 onMounted(() => {
-  // El avatar es público: siempre conectar, con o sin token.
-  // - Si hay token (usuario logueado): se identifica en el backend.
-  // - Si no hay token (visitante): se conecta como anónimo.
   const token = getToken() ?? undefined
   wsConectar(token)
 })
 
-// ─── WATCHERS ────────────────────────────────────────────────────────────────
-
-// Cuando llega la respuesta completa → actualizar store y sintetizar voz
 watch(respuestaCompleta, (texto) => {
   if (!texto) return
   store.setCargando(false)
-
   if (texto.trim()) {
     store.setRespuesta(store.preguntaMostrada, texto)
-    if (soportaSynthesis.value) {
-      hablar(formatearTextoParaVoz(texto))
-    }
+    if (soportaSynthesis.value) hablar(formatearTextoParaVoz(texto))
   } else {
     const msg = 'No entendí tu pregunta, intenta de nuevo.'
     store.setRespuesta(store.preguntaMostrada, msg)
@@ -202,30 +177,22 @@ watch(respuestaCompleta, (texto) => {
   }
 })
 
-// Durante streaming → actualizar la UI con el parcial
 watch(tokenStream, (parcial) => {
   if (parcial && wsEstado.value === 'generando') {
     store.setRespuesta(store.preguntaMostrada, parcial)
   }
 })
 
-// Errores WS → mostrar en la UI sin crashear
 watch(wsError, (err) => {
-  if (err) {
-    store.setCargando(false)
-    // No sobreescribir la pregunta mostrada; solo agregar contexto de error
-    store.setRespuesta(
-      store.preguntaMostrada,
-      store.preguntaMostrada ? `Error de conexión: ${err}` : ''
-    )
-  }
+  if (!err) return
+  store.setCargando(false)
+  store.setRespuesta(
+    store.preguntaMostrada,
+    store.preguntaMostrada ? `Error de conexión: ${err}` : ''
+  )
 })
 
-// ─── ESTADO LOCAL ────────────────────────────────────────────────────────────
-
 const preguntaUsuario = ref('')
-
-// ─── HANDLERS DE VOZ ─────────────────────────────────────────────────────────
 
 const empezarAEscuchar = (): void => {
   if (!soportaRecognition.value) return
@@ -240,31 +207,28 @@ const detenerEscuchaHandler = (): void => {
   })
 }
 
-const interrumpirAvatar = (): void => interrumpir()
-
-// ─── LÓGICA DE CHAT ───────────────────────────────────────────────────────────
+const interrumpirAvatar = (): void => {
+  interrumpir()
+}
 
 const enviarPregunta = (textoDirecto?: string): void => {
   const mensaje = (textoDirecto ?? preguntaUsuario.value).trim()
   if (!mensaje) return
-
   interrumpirAvatar()
   store.setCargando(true)
   store.setRespuesta(mensaje, 'Pensando...')
-
   try {
     wsEnviarPregunta(mensaje)
-  } catch (e: any) {
-    console.error('[AvatarView] Error al enviar pregunta por WS:', e)
+  } catch (e: unknown) {
+    const errMsg = e instanceof Error ? e.message : 'Error al enviar pregunta.'
+    console.error('[AvatarView] Error al enviar pregunta por WS:', errMsg)
     store.setCargando(false)
     store.setRespuesta(mensaje, 'Sin conexión con el servidor. Recarga la página o espera un momento.')
   }
-
   if (!textoDirecto) preguntaUsuario.value = ''
 }
 
 const intentarReconectar = (): void => {
-  // Reconectar siempre, con token si existe o como anónimo si no
   const token = getToken() ?? undefined
   wsConectar(token)
 }

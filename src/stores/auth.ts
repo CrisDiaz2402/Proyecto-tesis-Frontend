@@ -11,11 +11,8 @@ import {
 
 export const useAuthStore = defineStore('auth', () => {
 
-  // Inicializamos desde localStorage para sobrevivir recargas de página
   const username   = ref<string>(getUsernameGuardado())
   const isLoggedIn = ref<boolean>(hayTokenGuardado())
-
-  // ─── LOGIN ──────────────────────────────────────────────────────────────────
 
   async function login(user: string, password: string): Promise<boolean> {
     try {
@@ -28,8 +25,6 @@ export const useAuthStore = defineStore('auth', () => {
       return false
     }
   }
-
-  // ─── LOGOUT ─────────────────────────────────────────────────────────────────
 
   function logout() {
     limpiarSesion()
