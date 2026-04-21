@@ -112,7 +112,6 @@ function borrarUltimo() {
 
 function onBlur() {
   enfocado.value = false
-  // Si queda texto sin confirmar al perder foco, lo agrega automáticamente
   if (inputVal.value.trim()) {
     agregar()
   }

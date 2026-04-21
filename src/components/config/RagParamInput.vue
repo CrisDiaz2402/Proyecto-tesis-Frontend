@@ -69,10 +69,8 @@ const emit = defineEmits<{
 const inputId = computed(() => `rag-param-${props.paramKey}`)
 const errorMsg = ref('')
 
-// Paso decimal dinámico según el tipo
 const paso = computed(() => {
   if (props.tipoCampo === 'int') return 1
-  // Infiere el paso a partir del rango
   const rango = props.max - props.min
   if (rango <= 1) return 0.01
   if (rango <= 10) return 0.1

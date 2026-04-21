@@ -253,7 +253,6 @@ const guardar = async () => {
   }
 }
 
-// ── Lógica de Eliminación con el nuevo Modal ──
 const confirmarEliminacion = (user: Usuario) => {
   confirmModal.user = user
   confirmModal.show = true

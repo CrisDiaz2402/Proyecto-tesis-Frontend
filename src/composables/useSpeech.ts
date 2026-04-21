@@ -80,7 +80,6 @@ export function useSpeech() {
     }
 
     try {
-      // Cancelar cualquier utterance anterior antes de hablar
       if (synthRef.value.speaking) {
         synthRef.value.cancel()
       }
@@ -125,7 +124,6 @@ export function useSpeech() {
       return () => {}
     }
 
-    // Devuelve la función "detener"
     return (callback: (texto: string) => void) => {
       if (!store.estaEscuchando) return
       store.setEscuchando(false)

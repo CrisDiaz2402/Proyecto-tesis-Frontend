@@ -24,7 +24,7 @@
       </div>
     </div>
 
-    <div v-else class="flex flex-col gap-5">
+    <div v-else-if="datosListos" class="flex flex-col gap-5">
 
       <div
         v-if="advertencias.length"
@@ -71,7 +71,7 @@
             v-if="form && limites && defaults"
             param-key="umbral_relevancia_local"
             label="Umbral de Relevancia Local"
-            descripcion="Puntuación mínima de similitud (0–1) que debe tener un fragmento para pasar al contexto del LLM en modo local (nomic-embed-text produce scores naturalmente bajos). Recomendado: 0.15–0.25."
+            descripcion="Puntuación mínima de similitud (0–1) que debe tener un fragmento para pasar al contexto del LLM en modo local (sentence-transformers produce scores en el rango 0–1). Recomendado: 0.15–0.25."
             recomendado="0.15–0.25. Subir si el sistema mezcla información incorrecta."
             :min="limites.umbral_relevancia_local.min"
             :max="limites.umbral_relevancia_local.max"
@@ -79,20 +79,6 @@
             :valor-default="defaults.umbral_relevancia_local"
             v-model="form.umbral_relevancia_local"
             @validation-error="registrarError('umbral_relevancia_local', $event)"
-          />
-
-          <RagParamInput
-            v-if="form && limites && defaults"
-            param-key="umbral_relevancia_cloud"
-            label="Umbral de Relevancia Nube"
-            descripcion="Puntuación mínima de similitud en modo cloud (Gemini Embedding produce scores más altos que nomic). Recomendado: 0.30–0.50."
-            recomendado="0.30–0.50. Puede subirse con seguridad en modo cloud."
-            :min="limites.umbral_relevancia_cloud.min"
-            :max="limites.umbral_relevancia_cloud.max"
-            tipo-campo="float"
-            :valor-default="defaults.umbral_relevancia_cloud"
-            v-model="form.umbral_relevancia_cloud"
-            @validation-error="registrarError('umbral_relevancia_cloud', $event)"
           />
 
           <RagParamInput
@@ -107,20 +93,6 @@
             :valor-default="defaults.rag_k_local"
             v-model="form.rag_k_local"
             @validation-error="registrarError('rag_k_local', $event)"
-          />
-
-          <RagParamInput
-            v-if="form && limites && defaults"
-            param-key="rag_k_cloud"
-            label="Fragmentos a Recuperar (Nube)"
-            descripcion="Número de fragmentos candidatos en modo cloud. Los chunks cloud son más grandes, por lo que se necesitan menos para cubrir el contexto necesario."
-            recomendado="4–8. Los chunks cloud contienen más texto por fragmento."
-            :min="limites.rag_k_cloud.min"
-            :max="limites.rag_k_cloud.max"
-            tipo-campo="int"
-            :valor-default="defaults.rag_k_cloud"
-            v-model="form.rag_k_cloud"
-            @validation-error="registrarError('rag_k_cloud', $event)"
           />
 
         </div>
@@ -290,6 +262,10 @@ const placeholderPrompt = 'Escribe aquí el prompt principal…'
 
 const erroresValidacion = ref<Record<string, boolean>>({})
 
+const datosListos = computed(() =>
+  !!form.value && !!limites.value && !!defaults.value
+)
+
 const hayErrores = computed(() =>
   Object.values(erroresValidacion.value).some(Boolean)
 )
@@ -300,7 +276,7 @@ const estadoPrompt = computed<'defecto' | 'personalizado'>(() =>
 
 const puedoGuardarPrompt = computed(() => {
   const t = promptPrincipal.value.trim()
-  if (t.length === 0) return true // vacío = reset, siempre válido
+  if (t.length === 0) return true 
   return t.length >= 50 && t.includes('{contexto}') && t.includes('{pregunta}')
 })
 
@@ -309,12 +285,9 @@ async function cargar() {
   errorCarga.value = ''
   try {
     const res = await obtenerRagParams()
-    // Copia profunda para no mutar la referencia del backend
     form.value     = { ...res.parametros_actuales }
     defaults.value = { ...res.defaults }
     limites.value  = res.limites
-    
-    // Cargar datos del prompt
     defaultPrompt.value   = res.prompts_default_texto?.prompt_principal ?? ''
     promptPrincipal.value = res.parametros_actuales.prompt_principal ?? defaultPrompt.value
   } catch (e: any) {

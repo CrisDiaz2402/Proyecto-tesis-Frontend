@@ -42,22 +42,27 @@ function generarHTML(r: ResultadoEvaluacion): string {
     <tr>
       <td>${grupo}</td>
       <td style="text-align:center">${Math.round(g.promedio * 100)}%</td>
+      <td style="text-align:center">${(g.similitud_promedio ?? 0).toFixed(3)}</td>
       <td style="text-align:center; color:#10b981">${g.pass}</td>
       <td style="text-align:center; color:#f59e0b">${g.parcial}</td>
       <td style="text-align:center; color:#ef4444">${g.fail}</td>
       <td style="text-align:center">${g.total}</td>
     </tr>`).join('')
 
-  const filasCasos = r.resultados.map(caso => `
+  const filasCasos = r.resultados.map(caso => {
+    const matchSim = (caso.detalle ?? '').match(/similitud:\s*([\d.]+)/)
+    const simVal = matchSim ? matchSim[1] : '—'
+    return `
     <tr>
       <td style="font-family:monospace; font-size:11px">${caso.id}</td>
       <td>${caso.grupo}</td>
       <td><span style="font-size:10px; padding:2px 6px; border-radius:4px; background:${bgVeredicto(caso.veredicto)}; color:${colorVeredicto(caso.veredicto)}; border:1px solid ${colorVeredicto(caso.veredicto)}40">${caso.veredicto}</span></td>
       <td style="font-size:11px">${caso.pregunta}</td>
       <td style="font-size:11px; color:#9ca3af">${caso.respuesta.length > 200 ? caso.respuesta.substring(0, 200) + '…' : caso.respuesta}</td>
-      <td style="font-size:10px; font-family:monospace; color:#9ca3af">${caso.detalle}</td>
+      <td style="font-size:10px; font-family:monospace; color:#9ca3af">${simVal}</td>
       <td style="text-align:right; font-family:monospace; font-size:11px; color:${caso.latencia_ms < 500 ? '#10b981' : '#9ca3af'}">${caso.latencia_ms < 500 ? '⚡ caché' : caso.latencia_ms + ' ms'}</td>
-    </tr>`).join('')
+    </tr>`
+  }).join('')
 
   return `<!DOCTYPE html>
 <html lang="es">
@@ -129,7 +134,6 @@ function generarHTML(r: ResultadoEvaluacion): string {
   <h1>Reporte de Evaluación RAG</h1>
   <p class="subtitle">Experimento: <strong>${r.experimento}</strong> &nbsp;·&nbsp; Motor: <strong>${r.motor}</strong> &nbsp;·&nbsp; ${fecha} &nbsp;·&nbsp; Duración: ${r.duracion_total_seg}s</p>
 
-  <!-- Score global + conteo + parámetros -->
   <div class="grid3">
 
     <div class="score-card">
@@ -153,11 +157,18 @@ function generarHTML(r: ResultadoEvaluacion): string {
       <div class="stat-row"><span class="stat-label">Motor</span><span class="stat-value" style="color:#8b5cf6">${r.motor}</span></div>
       <div class="stat-row"><span class="stat-label">Duración</span><span class="stat-value">${r.duracion_total_seg}s</span></div>
       <div class="stat-row"><span class="stat-label">Fecha</span><span class="stat-value">${fecha}</span></div>
+      <div class="stat-row">
+        <span class="stat-label">Similitud prom.</span>
+        <span class="stat-value">${(r.similitud_promedio ?? 0).toFixed(3)}</span>
+      </div>
+      <div class="stat-row">
+        <span class="stat-label">Latencia prom.</span>
+        <span class="stat-value">${r.latencia_promedio_ms ?? 0} ms</span>
+      </div>
     </div>
 
   </div>
 
-  <!-- Resumen por grupo -->
   <div class="card">
     <h2>Resumen por grupo</h2>
     <table>
@@ -165,6 +176,7 @@ function generarHTML(r: ResultadoEvaluacion): string {
         <tr>
           <th>Grupo</th>
           <th style="text-align:center">Score</th>
+          <th style="text-align:center">Similitud prom.</th>
           <th style="text-align:center">PASS</th>
           <th style="text-align:center">PARCIAL</th>
           <th style="text-align:center">FAIL</th>
@@ -175,7 +187,6 @@ function generarHTML(r: ResultadoEvaluacion): string {
     </table>
   </div>
 
-  <!-- Detalle caso a caso -->
   <div class="card">
     <h2>Detalle por caso</h2>
     <table>
@@ -186,7 +197,7 @@ function generarHTML(r: ResultadoEvaluacion): string {
           <th>Veredicto</th>
           <th>Pregunta</th>
           <th>Respuesta RAG</th>
-          <th>Detalle scoring</th>
+          <th>Similitud</th>
           <th style="text-align:right">Latencia</th>
         </tr>
       </thead>
@@ -194,7 +205,6 @@ function generarHTML(r: ResultadoEvaluacion): string {
     </table>
   </div>
 
-  <!-- Guía de interpretación -->
   <div class="card">
     <h2>Guía de interpretación</h2>
     <table>
@@ -230,14 +240,15 @@ export function exportarHTML(resultado: ResultadoEvaluacion): void {
 }
 
 export function exportarCSV(resultado: ResultadoEvaluacion): void {
-  const cabecera = ['id', 'grupo', 'tipo', 'pregunta', 'respuesta', 'latencia_ms', 'score', 'veredicto', 'detalle', 'descripcion']
-  const filas    = resultado.resultados.map(r =>
-    cabecera.map(col => {
-      const val = (r as any)[col] ?? ''
+  const cabecera = ['id', 'grupo', 'pregunta', 'respuesta', 'latencia_ms', 'score', 'veredicto', 'similitud', 'descripcion']
+  const filas    = resultado.resultados.map(r => {
+    const row = { ...r, similitud: (r.detalle?.match(/similitud:\s*([\d.]+)/)?.[1]) ?? '—' }
+    return cabecera.map(col => {
+      const val = (row as any)[col] ?? ''
       const str = String(val).replace(/"/g, '""')
       return `"${str}"`
     }).join(',')
-  )
+  })
   const csv  = [cabecera.join(','), ...filas].join('\n')
   const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8' })  
   const url  = URL.createObjectURL(blob)

@@ -33,24 +33,6 @@
           <Icon icon="mdi:shield-alert-outline" class="text-orange-400 text-lg" />
           Administración Global del Sistema RAG
         </h2>
-
-        <div class="flex items-center gap-3">
-          <span class="text-xs text-gray-400 uppercase tracking-wider font-semibold">Ecosistema:</span>
-          <div class="flex bg-gray-900 border border-gray-700 rounded-lg p-1 gap-0.5">
-            <button
-              @click="motorGlobal = 'local'"
-              :class="['px-3 py-1 text-xs font-bold rounded transition-colors', motorGlobal === 'local' ? 'bg-blue-600 text-white' : 'text-gray-500 hover:text-white']"
-            >🖥️ Local</button>
-            <button
-              @click="motorGlobal = 'cloud'"
-              :class="['px-3 py-1 text-xs font-bold rounded transition-colors', motorGlobal === 'cloud' ? 'bg-emerald-600 text-white' : 'text-gray-500 hover:text-white']"
-            >☁️ Nube</button>
-            <button
-              @click="motorGlobal = 'all'"
-              :class="['px-3 py-1 text-xs font-bold rounded transition-colors', motorGlobal === 'all' ? 'bg-violet-600 text-white' : 'text-gray-500 hover:text-white']"
-            >🔁 Ambos</button>
-          </div>
-        </div>
       </div>
 
       <div class="p-4 sm:p-6 flex flex-wrap gap-3 sm:gap-4 items-center bg-gray-800/30">
@@ -62,7 +44,6 @@
         >
           <Icon icon="mdi:broom" />
           Limpiar Caché
-          <span class="text-yellow-400/70 text-xs">({{ motorGlobal === 'all' ? 'll + lc + cc' : motorGlobal === 'local' ? 'll + lc' : 'cc' }})</span>
         </button>
 
         <button
@@ -72,18 +53,15 @@
         >
           <Icon icon="mdi:database-remove-outline" />
           Reiniciar Vectores
-          <span class="text-orange-400/70 text-xs">({{ motorGlobal === 'all' ? 'Local + Nube' : motorGlobal === 'local' ? 'Local' : 'Nube' }})</span>
         </button>
 
         <button
           @click="pedirConfirmacion('sincronizar')"
-          :disabled="procesandoGlobal || motorGlobal === 'all'"
-          :title="motorGlobal === 'all' ? 'Selecciona Local o Nube para sincronizar' : ''"
+          :disabled="procesandoGlobal"
           class="flex items-center gap-2 px-4 py-2 bg-blue-600/20 hover:bg-blue-600/40 text-blue-400 border border-blue-600/50 rounded-lg text-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
         >
           <Icon icon="mdi:sync" :class="{ 'animate-spin': procesandoGlobal }" />
           Sincronizar
-          <span class="text-blue-400/70 text-xs">({{ motorGlobal === 'local' ? 'Local' : motorGlobal === 'cloud' ? 'Nube' : '—' }})</span>
         </button>
 
         <div class="flex-1"></div>
@@ -125,7 +103,7 @@
           <tr>
             <th class="px-4 sm:px-6 py-4 font-medium">Archivo</th>
             <th class="px-4 sm:px-6 py-4 font-medium hidden sm:table-cell">Subido por</th>
-            <th class="px-4 sm:px-6 py-4 font-medium">Estado en Ecosistemas</th>
+            <th class="px-4 sm:px-6 py-4 font-medium">Estado</th>
             <th class="px-4 sm:px-6 py-4 font-medium text-right">Acciones</th>
           </tr>
         </thead>
@@ -154,21 +132,12 @@
                 <span v-else class="px-2 py-1 bg-gray-700 text-gray-500 text-[10px] uppercase font-bold rounded border border-gray-600 w-fit flex items-center gap-1">
                   🖥️ No en Local
                 </span>
-                <span v-if="doc.procesado_cloud" class="px-2 py-1 bg-emerald-900/30 text-emerald-400 text-[10px] uppercase font-bold rounded border border-emerald-800 w-fit flex items-center gap-1">
-                  ☁️ {{ doc.estado_cloud }}
-                </span>
-                <span v-else class="px-2 py-1 bg-gray-700 text-gray-500 text-[10px] uppercase font-bold rounded border border-gray-600 w-fit flex items-center gap-1">
-                  ☁️ No en Nube
-                </span>
               </div>
             </td>
             <td class="px-4 sm:px-6 py-4 text-right">
               <div class="flex items-center justify-end gap-3">
                 <button v-if="doc.procesado_local" @click="descargar(doc, 'local')" class="text-blue-400 hover:text-blue-300 transition-colors" title="Descargar de Local">
                   <Icon icon="mdi:monitor-arrow-down" class="text-xl" />
-                </button>
-                <button v-if="doc.procesado_cloud" @click="descargar(doc, 'cloud')" class="text-emerald-400 hover:text-emerald-300 transition-colors" title="Descargar de Nube">
-                  <Icon icon="mdi:cloud-download-outline" class="text-xl" />
                 </button>
 
                 <div class="w-px h-5 bg-gray-600 mx-1"></div>
@@ -193,24 +162,13 @@
         <h3 class="text-xl font-bold text-white mb-1">Subir Documento</h3>
         <p class="text-gray-400 text-sm mb-5">Añade información a la base de conocimiento.</p>
 
-        <div class="mb-5 bg-gray-900 border border-gray-700 rounded-lg p-1 flex">
-          <button
-            @click="motorSubida = 'local'"
-            :class="['flex-1 py-1.5 text-xs font-bold uppercase tracking-wider rounded transition-colors', motorSubida === 'local' ? 'bg-blue-600 text-white' : 'text-gray-500 hover:text-gray-300']"
-          >🖥️ Destino Local</button>
-          <button
-            @click="motorSubida = 'cloud'"
-            :class="['flex-1 py-1.5 text-xs font-bold uppercase tracking-wider rounded transition-colors', motorSubida === 'cloud' ? 'bg-emerald-600 text-white' : 'text-gray-500 hover:text-gray-300']"
-          >☁️ Destino Nube</button>
-        </div>
-
         <div
           class="border-2 border-dashed border-gray-600 rounded-xl p-8 text-center bg-gray-900/50 hover:bg-gray-900 hover:border-gray-500 transition-colors cursor-pointer mb-5"
           @click="abrirSelectorArchivos"
         >
           <input type="file" ref="fileInput" class="hidden" :accept="EXTENSIONES_PERMITIDAS.join(',')" @change="manejarArchivo">
           <div v-if="!archivoSeleccionado">
-            <Icon :icon="motorSubida === 'cloud' ? 'mdi:cloud-upload-outline' : 'mdi:upload-network-outline'" :class="['text-4xl mx-auto mb-3', motorSubida === 'cloud' ? 'text-emerald-500' : 'text-blue-500']" />
+            <Icon icon="mdi:upload-network-outline" class="text-4xl mx-auto mb-3 text-blue-500" />
             <p class="text-white font-medium">Haz clic para buscar</p>
             <p class="text-gray-500 text-xs mt-1">Formatos admitidos (Max. {{ LIMITE_TAMANO_MB }}MB)</p>
           </div>
@@ -234,10 +192,10 @@
           <button
             @click="confirmarSubida"
             :disabled="!archivoSeleccionado || subiendo || mensajeModalSubir?.tipo === 'error'"
-            :class="['flex items-center gap-2 px-6 py-2 text-white text-sm font-semibold rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed', motorSubida === 'cloud' ? 'bg-emerald-600 hover:bg-emerald-500' : 'bg-blue-600 hover:bg-blue-500']"
+            :class="['flex items-center gap-2 px-6 py-2 text-white text-sm font-semibold rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed', 'bg-blue-600 hover:bg-blue-500']"
           >
             <Icon v-if="subiendo" icon="mdi:loading" class="animate-spin text-lg" />
-            {{ subiendo ? 'Vectorizando...' : `Procesar en ${motorSubida === 'local' ? 'Local' : 'Nube'}` }}
+            {{ subiendo ? 'Vectorizando...' : 'Procesar' }}
           </button>
         </div>
       </div>
@@ -250,17 +208,14 @@
         </h3>
 
         <p class="text-gray-400 text-sm mb-4">
-          Selecciona de qué ecosistema deseas eliminar <strong class="text-white">{{ modalEliminarDoc.doc?.nombre_archivo }}</strong>:
+          Confirma que deseas eliminar <strong class="text-white">{{ modalEliminarDoc.doc?.nombre_archivo }}</strong> del sistema.
         </p>
 
         <div class="bg-gray-900/60 border border-gray-700 rounded-lg p-3 mb-4 text-xs text-gray-400 space-y-1">
-          <p class="text-gray-300 font-semibold mb-1">⚠️ Al eliminar de un ecosistema se borra:</p>
-          <p>• El archivo físico de esa carpeta</p>
-          <p>• Los vectores de ChromaDB de ese motor</p>
-          <p>• El caché asociado (todas las combis del motor)</p>
-          <p v-if="modalEliminarDoc.doc?.procesado_local && modalEliminarDoc.doc?.procesado_cloud" class="text-yellow-400 mt-1">
-            ✔ Si eliminas de ambos, se borra el registro completo de la BD.
-          </p>
+          <p class="text-gray-300 font-semibold mb-1">⚠️ Al eliminar el documento se borra:</p>
+          <p>• El archivo físico</p>
+          <p>• Los vectores de Qdrant</p>
+          <p>• El caché asociado</p>
         </div>
 
         <div class="space-y-3 mb-6">
@@ -272,36 +227,10 @@
             <input type="checkbox" v-model="eliminarOpciones.local" class="w-4 h-4 text-red-600 bg-gray-800 border-gray-600 rounded focus:ring-red-600 focus:ring-2">
             <span class="text-sm font-medium text-gray-300 flex items-center gap-2">
               <Icon icon="mdi:monitor-off" class="text-blue-400"/>
-              Eliminar de Local (Ollama)
+              Eliminar de Local
             </span>
             <span class="ml-auto text-[10px] text-blue-400/70">cache_ll + cache_lc</span>
           </label>
-
-          <label
-            v-if="modalEliminarDoc.doc?.procesado_cloud"
-            class="flex items-center gap-3 p-3 bg-gray-900 border border-gray-700 rounded-lg cursor-pointer hover:border-red-500 transition-colors"
-            :class="{ 'border-red-500 bg-red-900/10': eliminarOpciones.cloud }"
-          >
-            <input type="checkbox" v-model="eliminarOpciones.cloud" class="w-4 h-4 text-red-600 bg-gray-800 border-gray-600 rounded focus:ring-red-600 focus:ring-2">
-            <span class="text-sm font-medium text-gray-300 flex items-center gap-2">
-              <Icon icon="mdi:cloud-off-outline" class="text-emerald-400"/>
-              Eliminar de Nube (Gemini)
-            </span>
-            <span class="ml-auto text-[10px] text-emerald-400/70">cache_cc</span>
-          </label>
-
-          <div
-            v-if="!modalEliminarDoc.doc?.procesado_local && modalEliminarDoc.doc?.procesado_cloud"
-            class="p-3 bg-blue-900/20 border border-blue-700/40 rounded-lg text-xs text-blue-300"
-          >
-            🖥️ Este documento no existe en el ecosistema Local.
-          </div>
-          <div
-            v-if="modalEliminarDoc.doc?.procesado_local && !modalEliminarDoc.doc?.procesado_cloud"
-            class="p-3 bg-emerald-900/20 border border-emerald-700/40 rounded-lg text-xs text-emerald-300"
-          >
-            ☁️ Este documento no existe en el ecosistema Nube.
-          </div>
         </div>
 
         <div class="flex gap-3">
@@ -312,7 +241,7 @@
           >Cancelar</button>
           <button
             @click="ejecutarEliminarDoc"
-            :disabled="(!eliminarOpciones.local && !eliminarOpciones.cloud) || modalEliminarDoc.loading"
+            :disabled="!eliminarOpciones.local || modalEliminarDoc.loading"
             class="flex-1 flex justify-center items-center gap-2 py-2 bg-red-600 hover:bg-red-500 text-white text-sm font-bold rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <Icon v-if="modalEliminarDoc.loading" icon="mdi:loading" class="animate-spin text-lg" />
@@ -342,7 +271,7 @@
           </div>
           <div>
             <h3 class="text-lg font-bold text-white">Formatear Sistema</h3>
-            <p class="text-red-400 text-xs font-medium">Acción irreversible en AMBOS ecosistemas</p>
+            <p class="text-red-400 text-xs font-medium">Acción irreversible</p>
           </div>
           <button @click="cerrarModalFormatear" :disabled="modalFormatear.loading" class="ml-auto text-gray-500 hover:text-gray-300">
             <Icon icon="mdi:close" class="text-xl" />
@@ -351,9 +280,9 @@
         <div class="bg-red-900/20 border border-red-800/50 rounded-xl p-4 mb-5">
           <p class="text-red-300 text-xs font-semibold uppercase tracking-wider mb-2">Se eliminará permanentemente:</p>
           <ul class="space-y-1.5">
-            <li class="flex items-center gap-2 text-gray-300 text-sm"><Icon icon="mdi:circle-small" class="text-red-500" /> Todos los documentos de Nube y Local</li>
-            <li class="flex items-center gap-2 text-gray-300 text-sm"><Icon icon="mdi:circle-small" class="text-red-500" /> Vectores de ChromaDB (Local + Nube)</li>
-            <li class="flex items-center gap-2 text-gray-300 text-sm"><Icon icon="mdi:circle-small" class="text-red-500" /> Caché semántico completo (ll + lc + cc)</li>
+            <li class="flex items-center gap-2 text-gray-300 text-sm"><Icon icon="mdi:circle-small" class="text-red-500" /> Todos los documentos</li>
+            <li class="flex items-center gap-2 text-gray-300 text-sm"><Icon icon="mdi:circle-small" class="text-red-500" /> Vectores de Qdrant (Local)</li>
+            <li class="flex items-center gap-2 text-gray-300 text-sm"><Icon icon="mdi:circle-small" class="text-red-500" /> Caché semántico completo (local:local y local:cloud)</li>
           </ul>
         </div>
         <div class="mb-5">
@@ -431,7 +360,7 @@ const modalConfirm = reactive({
 const modalEliminarDoc = reactive({
   show: false, loading: false, doc: null as Documento | null,
 })
-const eliminarOpciones = reactive({ local: false, cloud: false })
+const eliminarOpciones = reactive({ local: false })
 
 const modalFormatear = reactive({
   show: false, loading: false, password: '', verPassword: false,
@@ -450,14 +379,12 @@ async function cargarDocumentos() {
 }
 
 function etiquetaMotor(m: MotorScope): string {
-  return { local: 'Local', cloud: 'Nube', all: 'Local + Nube' }[m] ?? m
+  return { local: 'Local' }[m] ?? m
 }
 
 function detalleCacheMotor(m: MotorScope): string {
   return {
     local: 'cache_ll (local:local) y cache_lc (local:cloud)',
-    cloud: 'cache_cc (cloud:cloud)',
-    all:   'cache_ll, cache_lc y cache_cc (todos los cachés)',
   }[m] ?? m
 }
 
@@ -469,11 +396,6 @@ function pedirConfirmacion(accion: AccionGlobal) {
     return
   }
 
-  if (accion === 'sincronizar' && motorGlobal.value === 'all') {
-    toast.warning('Selecciona "Local" o "Nube" para sincronizar. No puedes sincronizar ambos a la vez.')
-    return
-  }
-
   const motor = motorGlobal.value
   const etiqueta = etiquetaMotor(motor)
 
@@ -482,16 +404,16 @@ function pedirConfirmacion(accion: AccionGlobal) {
       titulo:          `Limpiar Caché — ${etiqueta}`,
       mensaje:
         `Se eliminará el caché semántico de: ${detalleCacheMotor(motor)}.\n\n` +
-        `Los documentos físicos y los vectores de ChromaDB NO se ven afectados.`,
+        `Los documentos físicos y los vectores de Qdrant NO se ven afectados.`,
       textoConfirmar:  'Limpiar Caché',
       destructivo:     false,
     },
     vectores: {
       titulo:          `Reiniciar Vectores — ${etiqueta}`,
       mensaje:
-        `Se eliminarán los vectores de ChromaDB y el caché de [${etiqueta}].\n\n` +
+        `Se eliminarán los vectores de Qdrant y el caché de [${etiqueta}].\n\n` +
         `Los documentos físicos NO se borran, pero el asistente quedará sin base de conocimiento ` +
-        `en este motor hasta que uses "Sincronizar".\n\n` +
+        `hasta que uses "Sincronizar".\n\n` +
         `⚠️ El estado de los documentos en BD se actualizará a "No subido".`,
       textoConfirmar:  'Reiniciar Vectores',
       destructivo:     true,
@@ -567,6 +489,14 @@ async function ejecutarFormatear() {
       modalFormatear.password = ''
       return
     }
+
+    try {
+      await limpiarSoloCache('local')
+      console.log('[Formatear] ✓ Caché Redis limpiado')
+    } catch (cacheErr) {
+      console.warn('[Formatear] ⚠ No se pudo limpiar caché Redis:', cacheErr)
+    }
+
     const res = await eliminarTodosLosDocumentos()
     toast.success(res.mensaje)
     await cargarDocumentos()
@@ -582,10 +512,7 @@ async function ejecutarFormatear() {
 function abrirModalEliminarDoc(doc: Documento) {
   modalEliminarDoc.doc    = doc
   eliminarOpciones.local  = false
-  eliminarOpciones.cloud  = false
-  // Pre-seleccionar automáticamente si solo existe en un ecosistema
-  if (doc.procesado_local  && !doc.procesado_cloud) eliminarOpciones.local = true
-  if (doc.procesado_cloud  && !doc.procesado_local) eliminarOpciones.cloud = true
+  if (doc.procesado_local) eliminarOpciones.local = true
   modalEliminarDoc.show   = true
 }
 
@@ -600,14 +527,8 @@ async function ejecutarEliminarDoc() {
     if (eliminarOpciones.local) {
       await eliminarDocumento(modalEliminarDoc.doc.id, 'local')
     }
-    if (eliminarOpciones.cloud) {
-      await eliminarDocumento(modalEliminarDoc.doc.id, 'cloud')
-    }
 
-    const partes: string[] = []
-    if (eliminarOpciones.local) partes.push('Local')
-    if (eliminarOpciones.cloud) partes.push('Nube')
-    toast.success(`Eliminación completada en: ${partes.join(' + ')}.`)
+    toast.success('Documento eliminado correctamente.')
 
     await cargarDocumentos()
     modalEliminarDoc.show = false

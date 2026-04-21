@@ -38,7 +38,7 @@ export interface ChatResponse {
 }
 
 export type MotorTipo  = 'local' | 'cloud'
-export type MotorScope = 'local' | 'cloud' | 'all'
+export type MotorScope = 'local'
 
 export interface ConfiguracionIA {
   motor_vectores: MotorTipo
@@ -51,7 +51,7 @@ export const MODOS_IA = [
     motor_vectores: 'local'  as MotorTipo,
     motor_llm:      'local'  as MotorTipo,
     label:          'Todo Local',
-    descripcion:    'Vectores Ollama + LLM Llama 3.1. Máxima privacidad, sin internet.',
+    descripcion:    'Vectores sentence-transformers + LLM vLLM (Qwen2.5), sin internet.',
     icono:          'mdi:server-network',
     color:          'blue',
   },
@@ -60,18 +60,15 @@ export const MODOS_IA = [
     motor_vectores: 'local'  as MotorTipo,
     motor_llm:      'cloud'  as MotorTipo,
     label:          'Vectores Local + LLM Nube',
-    descripcion:    'Busca en vectores Ollama locales, pero responde con Gemini Flash.',
+    descripcion:    'Busca en vectores sentence-transformers locales, pero responde con Gemini Flash.',
     icono:          'mdi:server-network',
     color:          'violet',
   },
 ]
 
 export interface RagParams {
-  // Parámetros esenciales RAG
   umbral_relevancia_local: number
-  umbral_relevancia_cloud: number
   rag_k_local: number
-  rag_k_cloud: number
 }
 
 export interface ParamLimit {
@@ -138,9 +135,7 @@ export interface Documento {
   subido_por: string
   fecha_subida: string
   procesado_local: boolean
-  procesado_cloud: boolean
   estado_local: string
-  estado_cloud: string
 
   cargando?: boolean
 }
@@ -156,16 +151,14 @@ export interface AccionGlobalResponse {
   mensaje: string
 }
 
-export type TipoCaso = 'contiene' | 'no_contiene' | 'corrige' | 'no_alucina'
-export type Veredicto = 'PASS' | 'PARCIAL' | 'FAIL'
+export type Veredicto = 'PASS' | 'PARCIAL' | 'FAIL' | 'ERROR'
 
 export interface CasoEvaluacion {
   id: string
   grupo: string
-  tipo: TipoCaso
   pregunta: string
-  claves: string[]
-  claves_prohibidas: string[]
+  respuesta_esperada: string
+  umbral_similitud: number   // default 0.80
   descripcion?: string
   habilitado: boolean
 }
@@ -178,7 +171,7 @@ export interface EjecucionRequest {
 export interface ResultadoCaso {
   id: string
   grupo: string
-  tipo: TipoCaso
+  tipo: string
   pregunta: string
   respuesta: string
   latencia_ms: number
@@ -194,6 +187,7 @@ export interface ResumenGrupo {
   parcial: number
   fail: number
   total: number
+  similitud_promedio?: number
 }
 
 export interface ConteoGlobal {
@@ -211,6 +205,8 @@ export interface ResultadoEvaluacion {
   resultados: ResultadoCaso[]
   resumen_por_grupo: Record<string, ResumenGrupo>
   score_global: number
+  similitud_promedio: number
+  latencia_promedio_ms: number
   conteo_global: ConteoGlobal
 }
 
@@ -227,7 +223,7 @@ export interface EventoCompletado {
   caso_actual: number
   total_casos: number
   porcentaje: number
-  resultado_final: ResultadoEvaluacion
+  reporte_final: ResultadoEvaluacion
 }
 
 export interface EventoError {
@@ -235,7 +231,8 @@ export interface EventoError {
   caso_actual: number
   total_casos: number
   mensaje: string
-  detalle?: any
+  mensaje_error: string
+  detalle?: string
 }
 
 export type EventoSSE = EventoProgreso | EventoCompletado | EventoError
@@ -366,6 +363,27 @@ export async function eliminarTodosLosDocumentos(): Promise<AccionGlobalResponse
   return res.json()
 }
 
+export function parsearGoldenDataset(contenido: string): CasoEvaluacion[] {
+  const data = JSON.parse(contenido)
+  if (!Array.isArray(data.casos)) {
+    throw new Error('El JSON debe tener un campo "casos" que sea un array.')
+  }
+  return data.casos.map((c: any, i: number) => {
+    if (!c.id || !c.pregunta || !c.respuesta_esperada) {
+      throw new Error(`Caso en posición ${i} le falta "id", "pregunta" o "respuesta_esperada".`)
+    }
+    return {
+      id:                 String(c.id),
+      grupo:              c.grupo ?? 'General',
+      pregunta:           String(c.pregunta),
+      respuesta_esperada: String(c.respuesta_esperada),
+      umbral_similitud:   typeof c.umbral_similitud === 'number' ? c.umbral_similitud : 0.80,
+      descripcion:        c.descripcion ?? undefined,
+      habilitado:         c.habilitado !== false,
+    } satisfies CasoEvaluacion
+  })
+}
+
 export async function ejecutarEvaluacion(
   request: EjecucionRequest,
 ): Promise<ResultadoEvaluacion> {
@@ -389,6 +407,8 @@ export async function ejecutarEvaluacionStream(
 
   if (!res.body) throw new Error('El servidor no devolvió un stream.')
 
+  console.log('[SSE] Conexión abierta, leyendo stream...')
+
   const reader  = res.body.getReader()
   const decoder = new TextDecoder()
   let buffer    = ''
@@ -396,11 +416,14 @@ export async function ejecutarEvaluacionStream(
 
   while (true) {
     const { done, value } = await reader.read()
-    if (done) break
+    if (done) {
+      console.log('[SSE] Stream cerrado. reporteFinal:', reporteFinal)
+      break
+    }
 
     buffer += decoder.decode(value, { stream: true })
 
-    const partes = buffer.split('\\n\\n')
+    const partes = buffer.split('\n\n')
     buffer = partes.pop() ?? ''
 
     for (const parte of partes) {
@@ -412,13 +435,25 @@ export async function ejecutarEvaluacionStream(
 
       try {
         const evento: EventoSSE = JSON.parse(jsonStr)
+
+        if (evento.tipo === 'error') {
+          const detalle = evento.detalle ? ` — ${evento.detalle}` : ''
+          throw new Error((evento.mensaje_error ?? 'Error en el servidor durante la evaluación.') + detalle)
+        }
+
+        if (evento.tipo === 'progreso') {
+          console.log(`[SSE] Progreso: ${evento.caso_actual}/${evento.total_casos} (${evento.porcentaje}%) — id: ${evento.resultado?.id}`)
+        }
+
         onEvento(evento)
 
         if (evento.tipo === 'completado') {
-          reporteFinal = evento.resultado_final
+          console.log('[SSE] Evento completado recibido, extrayendo reporte_final...')
+          console.log('[SSE] reporte_final:', evento.reporte_final)
+          reporteFinal = evento.reporte_final
         }
       } catch (err) {
-        console.error('Error parsing SSE evento:', err, 'JSON:', jsonStr)
+        console.error('[SSE] Error parseando evento:', err, '| Raw JSON:', jsonStr)
       }
     }
   }

@@ -117,6 +117,8 @@ const parametros = computed(() => {
     { label: 'Motor',          value: r.motor,                               color: 'text-violet-300' },
     { label: 'Duración',       value: `${r.duracion_total_seg}s`,            color: null },
     { label: 'Fecha',          value: fecha,                                  color: null },
+    { label: 'Similitud prom.', value: r.similitud_promedio.toFixed(3),      color: r.similitud_promedio >= 0.80 ? 'text-emerald-400' : 'text-red-400' },
+    { label: 'Latencia prom.', value: `${r.latencia_promedio_ms} ms`,        color: r.latencia_promedio_ms < 2000 ? 'text-emerald-400' : null },
   ]
 })
 </script>

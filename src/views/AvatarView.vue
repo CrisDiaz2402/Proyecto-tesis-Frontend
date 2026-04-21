@@ -14,6 +14,7 @@
               type="text"
               v-model="preguntaUsuario"
               @keyup.enter="() => { interrumpirAvatar(); enviarPregunta(); }"
+              @keydown.enter.prevent="() => { interrumpirAvatar(); enviarPregunta(); }"
               :disabled="store.cargando || store.estaEscuchando"
               :placeholder="store.estaEscuchando ? 'Escuchando... (suelta para enviar)' : 'Escribe tu pregunta...'"
               class="flex-1 px-3 py-2 bg-gray-700 text-white text-sm border border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder-gray-400 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
@@ -37,6 +38,7 @@
             <button
               v-if="store.estaHablando"
               @click="interrumpirAvatar"
+              @touchend.prevent="interrumpirAvatar"
               class="px-3 bg-red-600 text-white rounded-lg hover:bg-red-500 transition-colors shadow-lg animate-pulse"
               title="Detener voz"
             >
@@ -45,6 +47,7 @@
             <button
               v-else
               @click="() => enviarPregunta()"
+              @touchend.prevent="() => enviarPregunta()"
               :disabled="store.cargando || store.estaEscuchando || wsEstado === 'conectando'"
               class="px-3 bg-blue-600 text-white rounded-lg hover:bg-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-lg"
             >
@@ -55,7 +58,7 @@
       </div>
 
       <div
-        v-if="store.respuestaBot || textoStreaming"
+        v-if="ultimoTextoMostrado"
         class="bg-white/95 p-3 sm:p-4 rounded-xl shadow-xl border-l-4 border-blue-500 animate-bounce-in flex flex-col gap-2 sm:gap-3 max-h-48 sm:max-h-none overflow-y-auto"
       >
         <div class="bg-blue-50/50 p-2.5 rounded-lg border border-blue-100">
@@ -65,7 +68,7 @@
         <div>
           <p class="text-[10px] text-gray-500 font-bold mb-1 uppercase tracking-wide">Asistente Virtual dice:</p>
           <p class="text-gray-800 text-sm leading-relaxed font-medium whitespace-pre-wrap">
-            {{ textoStreaming || store.respuestaBot }}
+            {{ textoStreaming || store.respuestaBot || ultimoTextoMostrado }}
             <span v-if="wsEstado === 'generando'" class="inline-block w-0.5 h-4 bg-blue-500 animate-pulse ml-0.5 align-middle"></span>
           </p>
         </div>
@@ -84,7 +87,18 @@
         <span v-else-if="wsEstado === 'conectando'" class="px-2 py-1 bg-yellow-500/20 text-yellow-400 text-xs rounded border border-yellow-500/50 flex items-center gap-1">
           <span class="w-2 h-2 bg-yellow-500 rounded-full animate-pulse"></span> Conectando...
         </span>
-        <span v-else-if="wsEstado === 'error'" class="px-2 py-1 bg-red-500/20 text-red-400 text-xs rounded border border-red-500/50 flex items-center gap-1 cursor-pointer hover:bg-red-500/30 transition-colors" @click="intentarReconectar" title="Clic para reintentar">
+        <span
+          v-else-if="wsEstado === 'error' && esErrorRateLimit"
+          class="px-2 py-1 bg-amber-500/20 text-amber-400 text-xs rounded border border-amber-500/50 flex items-center gap-1"
+        >
+          <Icon icon="mdi:timer-sand" class="text-sm" /> Espera un momento...
+        </span>
+        <span
+          v-else-if="wsEstado === 'error'"
+          class="px-2 py-1 bg-red-500/20 text-red-400 text-xs rounded border border-red-500/50 flex items-center gap-1 cursor-pointer hover:bg-red-500/30 transition-colors"
+          @click="intentarReconectar"
+          title="Clic para reintentar"
+        >
           <Icon icon="mdi:wifi-off" class="text-sm" /> Sin conexión — Reintentar
         </span>
         <span v-else class="px-2 py-1 bg-gray-700 text-gray-400 text-xs rounded border border-gray-600">
@@ -98,9 +112,17 @@
 
       <div
         v-if="wsEstado === 'error' && wsError"
-        class="bg-red-500/10 border border-red-500/20 rounded-xl p-3 text-red-300 text-xs flex items-start gap-2"
+        :class="[
+          'rounded-xl p-3 text-xs flex items-start gap-2',
+          esErrorRateLimit
+            ? 'bg-amber-500/10 border border-amber-500/20 text-amber-300'
+            : 'bg-red-500/10 border border-red-500/20 text-red-300'
+        ]"
       >
-        <Icon icon="mdi:alert-circle-outline" class="text-base shrink-0 mt-0.5" />
+        <Icon
+          :icon="esErrorRateLimit ? 'mdi:timer-sand' : 'mdi:alert-circle-outline'"
+          class="text-base shrink-0 mt-0.5"
+        />
         <span>{{ wsError }}</span>
       </div>
 
@@ -158,6 +180,11 @@ const {
 } = useChatWebSocket(WS_BASE_URL)
 
 const textoStreaming = computed(() => tokenStream.value)
+const ultimoTextoMostrado = ref('')
+
+const esErrorRateLimit = computed(() =>
+  wsError.value?.toLowerCase().includes('demasiadas consultas') ?? false
+)
 
 onMounted(() => {
   const token = getToken() ?? undefined
@@ -167,19 +194,15 @@ onMounted(() => {
 watch(respuestaCompleta, (texto) => {
   if (!texto) return
   store.setCargando(false)
+  ultimoTextoMostrado.value = texto
   if (texto.trim()) {
     store.setRespuesta(store.preguntaMostrada, texto)
     if (soportaSynthesis.value) hablar(formatearTextoParaVoz(texto))
   } else {
     const msg = 'No entendí tu pregunta, intenta de nuevo.'
+    ultimoTextoMostrado.value = msg
     store.setRespuesta(store.preguntaMostrada, msg)
     if (soportaSynthesis.value) hablar(msg)
-  }
-})
-
-watch(tokenStream, (parcial) => {
-  if (parcial && wsEstado.value === 'generando') {
-    store.setRespuesta(store.preguntaMostrada, parcial)
   }
 })
 
@@ -190,6 +213,13 @@ watch(wsError, (err) => {
     store.preguntaMostrada,
     store.preguntaMostrada ? `Error de conexión: ${err}` : ''
   )
+})
+
+watch(wsEstado, (estado) => {
+  if (estado === 'desconectado' && store.cargando) {
+    store.setCargando(false)
+    store.setRespuesta(store.preguntaMostrada, 'Conexión perdida. Intenta de nuevo.')
+  }
 })
 
 const preguntaUsuario = ref('')
@@ -215,6 +245,7 @@ const enviarPregunta = (textoDirecto?: string): void => {
   const mensaje = (textoDirecto ?? preguntaUsuario.value).trim()
   if (!mensaje) return
   interrumpirAvatar()
+  ultimoTextoMostrado.value = 'Pensando...'
   store.setCargando(true)
   store.setRespuesta(mensaje, 'Pensando...')
   try {

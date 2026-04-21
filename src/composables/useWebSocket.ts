@@ -154,7 +154,6 @@ class ErrorState implements WsState {
     ctx.transicionarA('desconectado')
   }
   onError(_event: Event, _ctx: WsStateContext): void {
-    // Ya estamos en error
   }
 }
 
@@ -172,8 +171,6 @@ const WS_STATES: Record<WsEstadoNombre, WsState> = {
   generando:    new GenerandoState(),
   error:        new ErrorState(),
 }
-
-// ─── Chain of Responsibility para mensajes WS (interno) ──────────────────────
 
 interface WsMensajeHandler {
   handle(msg: WsMensajeChat): void
@@ -230,12 +227,20 @@ class RespuestaCompletaHandler extends BaseWsHandler {
   handle(msg: WsMensajeChat): void {
     if (msg.tipo === 'respuesta') {
       this.respuestaCompleta.value = msg.respuesta ?? this.tokenStream.value
-      this.tokenStream.value = ''
       this.onListo()
+      Promise.resolve().then(() => {
+        this.tokenStream.value = ''
+      })
       return
     }
     if (msg.tipo === 'complete') {
+      if (this.tokenStream.value) {
+        this.respuestaCompleta.value = this.tokenStream.value
+      }
       this.onListo()
+      Promise.resolve().then(() => {
+        this.tokenStream.value = ''
+      })
       return
     }
     super.handle(msg)

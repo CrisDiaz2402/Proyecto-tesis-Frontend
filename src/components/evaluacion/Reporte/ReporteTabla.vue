@@ -16,9 +16,9 @@
           <tr class="border-b border-gray-700 text-[10px] font-bold text-gray-500 uppercase tracking-wider">
             <th class="px-4 py-3">ID</th>
             <th class="px-4 py-3">Grupo</th>
-            <th class="px-4 py-3">Tipo</th>
             <th class="px-4 py-3">Pregunta</th>
             <th class="px-4 py-3 text-center">Score</th>
+            <th class="px-4 py-3 text-center">Similitud</th>
             <th class="px-4 py-3 text-right">Latencia</th>
           </tr>
         </thead>
@@ -36,11 +36,6 @@
               <td class="px-4 py-3">
                 <span class="text-xs text-gray-300">{{ r.grupo }}</span>
               </td>
-              <td class="px-4 py-3">
-                <span :class="['px-2 py-0.5 rounded-full text-[10px] font-semibold border', colorTipo(r.tipo)]">
-                  {{ r.tipo }}
-                </span>
-              </td>
               <td class="px-4 py-3 max-w-xs">
                 <p class="text-xs text-gray-200 line-clamp-2 leading-relaxed">{{ r.pregunta }}</p>
               </td>
@@ -51,6 +46,11 @@
                   </span>
                   <span class="text-[10px] text-gray-500 font-mono">{{ r.score.toFixed(1) }}</span>
                 </div>
+              </td>
+              <td class="px-4 py-3 text-center">
+                <span :class="['text-xs font-mono font-semibold', colorSimilitud(parsearSimilitud(r.detalle))]">
+                  {{ parsearSimilitud(r.detalle) }}
+                </span>
               </td>
               <td class="px-4 py-3 text-right">
                 <span :class="['text-xs font-mono', r.latencia_ms < 500 ? 'text-emerald-400' : 'text-gray-400']">
@@ -76,7 +76,6 @@
                     <p class="text-xs text-gray-400 font-mono leading-relaxed">{{ r.detalle }}</p>
                   </div>
 
-                  <!-- Descripción del caso -->
                   <p v-if="r.descripcion" class="text-[11px] text-gray-500 italic">
                     📌 {{ r.descripcion }}
                   </p>
@@ -113,17 +112,21 @@ function colorVeredicto(v: Veredicto): string {
     PASS:    'bg-emerald-500/15 text-emerald-400 border-emerald-500/30',
     PARCIAL: 'bg-yellow-500/15  text-yellow-400  border-yellow-500/30',
     FAIL:    'bg-red-500/15     text-red-400     border-red-500/30',
+    ERROR:   'bg-purple-500/15  text-purple-400  border-purple-500/30',
   }
   return mapa[v]
 }
 
-function colorTipo(tipo: string): string {
-  const mapa: Record<string, string> = {
-    contiene:    'bg-blue-500/10   text-blue-400   border-blue-500/30',
-    no_contiene: 'bg-orange-500/10 text-orange-400 border-orange-500/30',
-    corrige:     'bg-yellow-500/10 text-yellow-400 border-yellow-500/30',
-    no_alucina:  'bg-red-500/10    text-red-400    border-red-500/30',
-  }
-  return mapa[tipo] ?? 'bg-gray-700 text-gray-400 border-gray-600'
+function parsearSimilitud(detalle: string): string {
+  const m = detalle.match(/similitud:\s*([\d.]+)/)
+  return m ? m[1]! : '—'
+}
+
+function colorSimilitud(val: string): string {
+  const n = parseFloat(val)
+  if (isNaN(n)) return 'text-gray-500'
+  if (n >= 0.80) return 'text-emerald-400'
+  if (n >= 0.60) return 'text-yellow-400'
+  return 'text-red-400'
 }
 </script>

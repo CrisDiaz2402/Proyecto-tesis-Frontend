@@ -2,7 +2,6 @@
 
 export const BACKEND_URL = import.meta.env.VITE_BACKEND_URL as string
 
-// URL base para WebSockets (convierte http→ws, https→wss automáticamente)
 export const WS_BASE_URL = BACKEND_URL
   .replace(/^https/, 'wss')
   .replace(/^http/, 'ws')
