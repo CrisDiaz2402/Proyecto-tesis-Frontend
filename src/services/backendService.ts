@@ -595,3 +595,58 @@ export async function obtenerNluDefaults(): Promise<NluConfig> {
   const res = await apiFetch('/api/nlu-config/defaults')
   return res.json()
 }
+
+// ── Caché Admin ───────────────────────────────────────────────────────────────
+
+export interface EntradaResumen {
+  clave: string
+  pregunta: string
+  respuesta_preview: string
+  documento_origen: string
+  timestamp: string
+}
+
+export interface EntradaDetalle {
+  clave: string
+  pregunta: string
+  respuesta: string
+  documento_origen: string
+  timestamp: string
+  motor_vectores: string
+  motor_llm: string
+}
+
+export async function listarEntradasCache(motorLlm: string): Promise<EntradaResumen[]> {
+  const res = await apiFetch(`/api/cache-admin/entradas?motor_llm=${encodeURIComponent(motorLlm)}`)
+  return res.json()
+}
+
+export async function buscarEntradasCache(q: string): Promise<EntradaResumen[]> {
+  const res = await apiFetch(`/api/cache-admin/entradas/buscar?q=${encodeURIComponent(q)}`)
+  return res.json()
+}
+
+export async function obtenerEntradaCache(cacheKey: string): Promise<EntradaDetalle> {
+  const res = await apiFetch(`/api/cache-admin/entradas/${encodeURIComponent(cacheKey)}`)
+  return res.json()
+}
+
+export async function corregirEntradaCache(
+  cacheKey: string,
+  nuevaRespuesta: string,
+  corregidaPor: string,
+): Promise<EntradaDetalle> {
+  const res = await apiFetch(`/api/cache-admin/entradas/${encodeURIComponent(cacheKey)}`, {
+    method:  'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body:    JSON.stringify({ nueva_respuesta: nuevaRespuesta, corregida_por: corregidaPor }),
+  })
+  return res.json()
+}
+
+export async function eliminarEntradaCache(cacheKey: string): Promise<{ ok: boolean }> {
+  const res = await apiFetch(`/api/cache-admin/entradas/${encodeURIComponent(cacheKey)}`, {
+    method: 'DELETE',
+  })
+  return res.json()
+}

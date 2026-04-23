@@ -1,6 +1,5 @@
 <template>
   <div class="h-screen bg-gray-900 flex overflow-hidden">
-
     <div
       v-if="sidebarOpen"
       class="fixed inset-0 bg-black/50 z-30 lg:hidden"
@@ -11,7 +10,6 @@
       class="fixed inset-y-0 left-0 z-40 w-64 bg-gray-800 border-r border-gray-700 flex flex-col shrink-0 overflow-y-auto transition-transform duration-200 lg:static lg:translate-x-0"
       :class="sidebarOpen ? 'translate-x-0' : '-translate-x-full'"
     >
-
       <div class="px-6 py-5 border-b border-gray-700 flex items-center gap-3">
         <div class="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center shrink-0">
           <Icon icon="mdi:robot-outline" class="text-white text-lg" />
@@ -73,11 +71,9 @@
           Cerrar sesión
         </button>
       </div>
-
     </aside>
 
     <div class="flex-1 flex flex-col min-w-0">
-
       <header class="h-14 bg-gray-800 border-b border-gray-700 px-4 sm:px-6 flex items-center justify-between shrink-0">
         <div class="flex items-center gap-3">
           <button
@@ -95,39 +91,53 @@
       </header>
 
       <main class="flex-1 overflow-y-auto">
-        <RouterView />
+        <RouterView v-slot="{ Component, route }">
+          <template v-if="Component">
+            <Suspense>
+              <template #default>
+                <component :is="Component" :key="route.path" />
+              </template>
+              <template #fallback>
+                <div class="flex h-full items-center justify-center bg-gray-900">
+                  <div class="flex flex-col items-center gap-3">
+                    <Icon icon="mdi:loading" class="text-4xl text-blue-500 animate-spin" />
+                    <span class="text-gray-400 text-sm animate-pulse">Cargando módulo...</span>
+                  </div>
+                </div>
+              </template>
+            </Suspense>
+          </template>
+        </RouterView>
       </main>
-
     </div>
-
   </div>
 </template>
 
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import { RouterLink, RouterView, useRouter, useRoute } from 'vue-router'
-
 import { useAuthStore } from '@/stores/auth'
 
-const router    = useRouter()
-const route     = useRoute()
+const router = useRouter()
+const route = useRoute()
 const authStore = useAuthStore()
 
 const sidebarOpen = ref(false)
 
 const navItems = [
-  { to: '/admin/documents',  label: 'Documentos',        icon: 'mdi:file-document-outline'  },
-  { to: '/admin/config',     label: 'Configuración IA',  icon: 'mdi:brain'                  },
-  { to: '/admin/nlu',        label: 'Control de Intención', icon: 'mdi:message-cog-outline'  },
-  { to: '/admin/evaluacion', label: 'Evaluador RAG',     icon: 'mdi:test-tube'              },
-  { to: '/admin/monitor',    label: 'Monitor',           icon: 'mdi:monitor-eye'            }, // ← NUEVO
-  { to: '/admin/users',      label: 'Usuarios',          icon: 'mdi:account-group-outline'  },
+  { to: '/admin/documents', label: 'Documentos', icon: 'mdi:file-document-outline' },
+  { to: '/admin/config', label: 'Configuración IA', icon: 'mdi:brain' },
+  { to: '/admin/nlu', label: 'Control de Intención', icon: 'mdi:message-cog-outline' },
+  { to: '/admin/evaluacion', label: 'Evaluador RAG', icon: 'mdi:test-tube' },
+  { to: '/admin/monitor', label: 'Monitor', icon: 'mdi:monitor-eye' },
+  { to: '/admin/memoria', label: 'Memoria', icon: 'mdi:database-eye-outline' },
+  { to: '/admin/users', label: 'Usuarios', icon: 'mdi:account-group-outline' },
 ]
 
 const isActive = (path: string) => route.path.startsWith(path)
 
 const paginaActual = computed(() => {
-  const item = navItems.find(i => isActive(i.to))
+  const item = navItems.find((i) => isActive(i.to))
   return item ? item.label : 'Panel de Administración'
 })
 

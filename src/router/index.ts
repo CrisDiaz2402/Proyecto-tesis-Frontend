@@ -48,6 +48,11 @@ const router = createRouter({
           component: () => import('@/views/MonitorView.vue'),
         },
         {
+          path: 'memoria',
+          name: 'admin-cache',
+          component: () => import('@/views/CacheAdminView.vue'),
+        },
+        {
           path: 'users',
           name: 'admin-users',
           component: () => import('@/views/UsersView.vue'),
