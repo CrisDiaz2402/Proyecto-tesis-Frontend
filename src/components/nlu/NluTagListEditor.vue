@@ -10,7 +10,7 @@
 </template>
 
 <script setup lang="ts">
-import TagInput from '@/components/evaluacion/shared/TagInput.vue'
+import TagInput from '@/components/shared/TagInput.vue'
 
 defineProps<{
   modelValue: string[]

@@ -1,36 +1,22 @@
-# ============================================================
-# Dockerfile.frontend — Vue 3 (build + Nginx)
-# ============================================================
-# Etapa 1: Compilar Vue con Node
 FROM node:20-alpine AS builder
 
 WORKDIR /app
 
-# Copiar package.json primero (aprovecha cache)
 COPY package.json package-lock.json* ./
 
-# Instalar dependencias
 RUN npm install
 
-# Copiar el resto del código
 COPY . .
 
-# Variable de entorno para la URL del backend en Docker
-# Se puede sobreescribir con ARG en docker-compose
 ARG VITE_BACKEND_URL=http://localhost:8000
 ENV VITE_BACKEND_URL=$VITE_BACKEND_URL
 
-# Compilar la app para producción
 RUN npm run build
 
-# ============================================================
-# Etapa 2: Servir con Nginx (imagen mínima)
 FROM nginx:alpine
 
-# Copiar la app compilada al directorio de Nginx
 COPY --from=builder /app/dist /usr/share/nginx/html
 
-# Copiar configuración personalizada de Nginx
 COPY nginx.conf /etc/nginx/conf.d/default.conf
 
 EXPOSE 80

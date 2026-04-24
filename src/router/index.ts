@@ -38,11 +38,6 @@ const router = createRouter({
           component: () => import('@/views/ConfiguracionView.vue'),
         },
         {
-          path: 'evaluacion',
-          name: 'admin-evaluacion',
-          component: () => import('@/views/EvaluacionView.vue'),
-        },
-        {
           path: 'monitor',
           name: 'admin-monitor',
           component: () => import('@/views/MonitorView.vue'),

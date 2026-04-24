@@ -128,7 +128,6 @@ const navItems = [
   { to: '/admin/documents', label: 'Documentos', icon: 'mdi:file-document-outline' },
   { to: '/admin/config', label: 'Configuración IA', icon: 'mdi:brain' },
   { to: '/admin/nlu', label: 'Control de Intención', icon: 'mdi:message-cog-outline' },
-  { to: '/admin/evaluacion', label: 'Evaluador RAG', icon: 'mdi:test-tube' },
   { to: '/admin/monitor', label: 'Monitor', icon: 'mdi:monitor-eye' },
   { to: '/admin/memoria', label: 'Memoria', icon: 'mdi:database-eye-outline' },
   { to: '/admin/users', label: 'Usuarios', icon: 'mdi:account-group-outline' },

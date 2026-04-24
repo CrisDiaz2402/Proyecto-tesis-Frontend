@@ -198,7 +198,6 @@
 </template>
 
 <script setup lang="ts">
-// 1. Añadimos nextTick aquí
 import { ref, watch, onMounted, nextTick } from 'vue' 
 import { toast } from 'vue3-toastify'
 import { useAuthStore } from '@/stores/auth'
@@ -212,7 +211,6 @@ import {
 } from '@/services/backendService'
 import type { EntradaResumen } from '@/services/backendService'
 
-// ── Estado general ──────────────────────────────────────────────────────────
 const authStore      = useAuthStore()
 const motorLlm       = ref<'local' | 'cloud'>('local')
 const textoBusqueda  = ref('')
@@ -220,7 +218,6 @@ const entradas       = ref<EntradaResumen[]>([])
 const cargando       = ref(false)
 const buscando       = ref(false)
 
-// ── Modal edición ────────────────────────────────────────────────────────────
 const modalEdicion = ref({
   abierto:         false,
   clave:           '',
@@ -230,7 +227,6 @@ const modalEdicion = ref({
   guardando:       false,
 })
 
-// ── Modal eliminación ────────────────────────────────────────────────────────
 const modalEliminar = ref({
   abierto:    false,
   pregunta:   '',
@@ -238,7 +234,6 @@ const modalEliminar = ref({
   eliminando: false,
 })
 
-// ── Helpers ──────────────────────────────────────────────────────────────────
 function truncar(texto: string, max: number): string {
   if (!texto) return ''
   return texto.length > max ? texto.slice(0, max) + '…' : texto
@@ -253,7 +248,6 @@ function formatearFecha(timestamp: string): string {
   })
 }
 
-// ── Carga principal ──────────────────────────────────────────────────────────
 async function cargarEntradas() {
   cargando.value = true
   try {
@@ -265,7 +259,6 @@ async function cargarEntradas() {
   }
 }
 
-// ── Búsqueda con debounce ────────────────────────────────────────────────────
 let debounceTimer: ReturnType<typeof setTimeout> | null = null
 
 watch(textoBusqueda, (val) => {
@@ -286,7 +279,6 @@ watch(textoBusqueda, (val) => {
   }, 400)
 })
 
-// ── Edición ──────────────────────────────────────────────────────────────────
 async function abrirEdicion(entrada: EntradaResumen) {
   modalEdicion.value = {
     abierto:         true,
@@ -321,7 +313,6 @@ async function guardarEdicion() {
       modalEdicion.value.nuevaRespuesta,
       authStore.username,
     )
-    // Actualizar la fila en la lista local sin recargar todo
     const idx = entradas.value.findIndex(e => e.clave === modalEdicion.value.clave)
     const entradaActualizar = idx !== -1 ? entradas.value[idx] : undefined
     if (entradaActualizar) {
@@ -336,7 +327,6 @@ async function guardarEdicion() {
   }
 }
 
-// ── Eliminación ──────────────────────────────────────────────────────────────
 function pedirEliminacion(entrada: EntradaResumen) {
   modalEliminar.value = {
     abierto:    true,
@@ -360,8 +350,6 @@ async function confirmarEliminacion() {
   }
 }
 
-// ── Init ─────────────────────────────────────────────────────────────────────
-// 2. Modificamos el hook onMounted para evitar la colisión con la limpieza del canvas 3D
 onMounted(() => {
   nextTick(() => {
     setTimeout(() => {

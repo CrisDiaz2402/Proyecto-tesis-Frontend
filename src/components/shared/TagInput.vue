@@ -1,4 +1,3 @@
-<!-- src/components/evaluacion/shared/TagInput.vue -->
 <template>
   <div class="flex flex-col gap-1.5">
 
@@ -61,7 +60,6 @@
 
 <script setup lang="ts">
 import { ref } from 'vue'
-
 
 const props = withDefaults(defineProps<{
   modelValue:   string[]
