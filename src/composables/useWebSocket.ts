@@ -1,4 +1,3 @@
-// src/composables/useWebSocket.ts
 import { ref, onUnmounted } from 'vue'
 import type { Ref } from 'vue'
 
@@ -261,7 +260,7 @@ class WsErrorHandler extends BaseWsHandler {
     if (msg.tipo === 'error') {
       this.error.value = msg.mensaje ?? 'Error desconocido del servidor.'
       this.onError()
-      console.error('[WS Chat] Error del servidor:', msg.mensaje, '| Details:', msg.details)
+      console.error('[WS Chat] server error:', msg.mensaje, msg.details)
       return
     }
     super.handle(msg)
@@ -274,12 +273,12 @@ class PongHandler extends BaseWsHandler {
       return
     }
     if (msg.tipo === 'status') {
-      console.debug('[WS Chat] Estado:', msg.mensaje)
+      console.debug('[WS Chat] status:', msg.mensaje)
       return
     }
     super.handle(msg)
     if (!['token', 'respuesta', 'complete', 'error'].includes(msg.tipo)) {
-      console.warn('[WS Chat] Tipo de mensaje desconocido:', msg.tipo)
+      console.warn('[WS Chat] unknown message type:', msg.tipo)
     }
   }
 }
@@ -324,7 +323,7 @@ export function useWebSocket(
 
   function _validarUrl(url: string): boolean {
     if (!url || !url.startsWith('ws')) {
-      console.error('[WS] URL inválida:', url, '— debe comenzar con ws:// o wss://')
+      console.error('[WS] invalid url:', url)
       return false
     }
     return true
@@ -353,14 +352,14 @@ export function useWebSocket(
     try {
       ws.value = new WebSocket(url)
     } catch (e: unknown) {
-      console.error('[WS] Error al crear WebSocket:', e)
+      console.error('[WS] create error:', e)
       estado.value = 'error'
       error.value  = 'No se pudo crear la conexión WebSocket.'
       return
     }
 
     ws.value.onopen = () => {
-      console.info('[WS] Conexión establecida.')
+      console.info('[WS] connected')
       estado.value = 'listo'
       error.value  = ''
       intentos     = 0
@@ -373,14 +372,14 @@ export function useWebSocket(
         _currentState().onMensaje(msg, stateCtx)
         cadenaHandlers.handle(msg)
       } catch (err) {
-        console.error('[WS] Error al parsear mensaje recibido:', err, '| Raw:', event.data)
+        console.error('[WS] parse error:', err, event.data)
         error.value  = 'Error de formato en mensaje del servidor.'
         estado.value = 'error'
       }
     }
 
     ws.value.onerror = (event) => {
-      console.error('[WS] Error de WebSocket:', event)
+      console.error('[WS] error:', event)
       _currentState().onError(event, stateCtx)
     }
 
@@ -399,13 +398,12 @@ export function useWebSocket(
         error.value  = `Conexión cerrada (código ${event.code}).`
         estado.value = 'error'
       } else {
-        console.info('[WS] Conexión cerrada normalmente.')
       }
 
       if (strategy.shouldReconnect(event)) {
         intentos++
         const delay = strategy.getDelay(intentos)
-        console.info(`[WS] Reintento ${intentos} en ${delay / 1000}s.`)
+        console.info(`[WS] retry ${intentos} in ${delay / 1000}s`)
         reconnectTimeout = setTimeout(() => conectar(_lastAuthToken), delay)
       }
     }
@@ -413,7 +411,7 @@ export function useWebSocket(
 
   function enviarPregunta(pregunta: string): void {
     if (!pregunta.trim()) {
-      console.warn('[WS] Se intentó enviar una pregunta vacía.')
+      console.warn('[WS] empty question')
       return
     }
     if (ws.value?.readyState !== WebSocket.OPEN) {
@@ -428,7 +426,7 @@ export function useWebSocket(
     try {
       ws.value.send(JSON.stringify({ tipo: 'pregunta', pregunta }))
     } catch (e: unknown) {
-      console.error('[WS] Error al enviar pregunta:', e)
+      console.error('[WS] send error:', e)
       estado.value = 'error'
       error.value  = 'Error al enviar la pregunta al servidor.'
     }
@@ -513,13 +511,13 @@ export function useMonitorWebSocket(baseUrl: string, authToken: string) {
 
   function _esConfiguracionValida(): boolean {
     if (!baseUrl || !baseUrl.startsWith('ws')) {
-      console.error('[WS Monitor] URL inválida:', baseUrl)
+      console.error('[WS Monitor] invalid url:', baseUrl)
       errorMsg.value      = 'URL del servidor WebSocket inválida.'
       errorConexion.value = true
       return false
     }
     if (!authToken || authToken.trim() === '') {
-      console.error('[WS Monitor] Token de autenticación vacío.')
+      console.error('[WS Monitor] empty token')
       errorMsg.value      = 'No hay sesión activa. Inicia sesión para ver el monitor.'
       errorConexion.value = true
       return false
@@ -534,7 +532,7 @@ export function useMonitorWebSocket(baseUrl: string, authToken: string) {
     if (!_esConfiguracionValida()) return
 
     if (intentos >= MAX_REINTENTOS) {
-      console.error(`[WS Monitor] Se alcanzó el límite de ${MAX_REINTENTOS} reintentos.`)
+      console.error('[WS Monitor] max retries:', MAX_REINTENTOS)
       errorMsg.value      = 'No se pudo conectar al monitor tras varios intentos.'
       errorConexion.value = true
       return
@@ -543,14 +541,14 @@ export function useMonitorWebSocket(baseUrl: string, authToken: string) {
     try {
       ws.value = new WebSocket(`${baseUrl}/ws/monitor?token=${authToken}`)
     } catch (e: unknown) {
-      console.error('[WS Monitor] Error al crear WebSocket:', e)
+      console.error('[WS Monitor] create error:', e)
       errorMsg.value      = 'No se pudo crear la conexión con el monitor.'
       errorConexion.value = true
       return
     }
 
     ws.value.onopen = () => {
-      console.info('[WS Monitor] Conexión establecida.')
+      console.info('[WS Monitor] connected')
       conectado.value     = true
       errorConexion.value = false
       errorMsg.value      = ''
@@ -563,10 +561,10 @@ export function useMonitorWebSocket(baseUrl: string, authToken: string) {
         if (msg.tipo === 'estado_completo' && msg.data) {
           estado.value = msg.data
         } else if (msg.tipo === 'error') {
-          console.error('[WS Monitor] Error del servidor:', msg)
+          console.error('[WS Monitor] server error:', msg)
         }
       } catch (err) {
-        console.error('[WS Monitor] Error al parsear mensaje:', err, '| Raw:', event.data)
+        console.error('[WS Monitor] parse error:', err, event.data)
       }
     }
 
@@ -580,9 +578,7 @@ export function useMonitorWebSocket(baseUrl: string, authToken: string) {
           ? 'Sesión expirada. Recarga la página e inicia sesión.'
           : ''
         if (event.code !== 1000) {
-          console.error(`[WS Monitor] Cierre no-reconectable (code=${event.code})`)
-        } else {
-          console.info('[WS Monitor] Conexión cerrada normalmente.')
+          console.error(`[WS Monitor] close no-reconnect, code:`, event.code)
         }
         return
       }
@@ -590,12 +586,12 @@ export function useMonitorWebSocket(baseUrl: string, authToken: string) {
       errorConexion.value = true
       intentos++
       const delay = strategy.getDelay(intentos)
-      console.warn(`[WS Monitor] Cierre inesperado (code=${event.code}). Reintento ${intentos}/${MAX_REINTENTOS} en ${delay / 1000}s.`)
+      console.warn(`[WS Monitor] retry ${intentos}/${MAX_REINTENTOS}, code: ${event.code}, delay: ${delay / 1000}s`)
       reconnectTimeout = setTimeout(() => conectar(), delay)
     }
 
     ws.value.onerror = (event) => {
-      console.error('[WS Monitor] Error de WebSocket:', event)
+      console.error('[WS Monitor] error:', event)
       conectado.value     = false
       errorConexion.value = true
     }

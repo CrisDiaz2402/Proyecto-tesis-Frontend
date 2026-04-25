@@ -1,8 +1,7 @@
-<!-- src/components/ui/AppInput.vue -->
 <template>
   <div class="flex flex-col gap-1.5">
 
-    <label v-if="label" class="text-xs text-gray-400 uppercase tracking-wider">
+    <label v-if="label" class="text-xs text-gray-600 uppercase tracking-wider">
       {{ label }}
     </label>
 
@@ -21,8 +20,8 @@
         :disabled="disabled"
         @input="$emit('update:modelValue', ($event.target as HTMLInputElement).value)"
         :class="[
-          'w-full py-2.5 bg-gray-700 text-white text-sm border border-gray-600 rounded-lg',
-          'focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder-gray-500 transition-all',
+          'w-full py-2.5 bg-gray-50 text-gray-800 text-sm border border-gray-300 rounded-lg',
+          'focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder-gray-400 transition-all',
           'disabled:opacity-50 disabled:cursor-not-allowed',
           iconLeft  ? 'pl-10' : 'pl-4',
           iconRight || isPassword ? 'pr-10' : 'pr-4',
@@ -33,7 +32,7 @@
         v-if="isPassword"
         type="button"
         @click="verPassword = !verPassword"
-        class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-300 transition-colors"
+        class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
       >
         <Icon :icon="verPassword ? 'mdi:eye-off-outline' : 'mdi:eye-outline'" class="text-lg" />
       </button>

@@ -1,5 +1,5 @@
 <template>
-  <div class="bg-gray-800 border border-gray-700 rounded-xl p-4">
+  <div class="bg-white border border-gray-200 rounded-xl p-4">
     <TagInput
       :modelValue="modelValue"
       @update:modelValue="$emit('update:modelValue', $event)"

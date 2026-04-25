@@ -3,22 +3,21 @@
 
     <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mb-6">
       <div>
-        <h1 class="text-2xl font-bold text-white">Gestión del Caché</h1>
-        <p class="text-gray-400 text-sm mt-1">Edita o elimina respuestas almacenadas en caché</p>
+        <h1 class="text-2xl font-bold text-gray-800">Gestión del Caché</h1>
+        <p class="text-gray-500 text-sm mt-1">Edita o elimina respuestas almacenadas en caché</p>
       </div>
       <div class="flex items-center gap-3">
         <select
           v-model="motorLlm"
           @change="cargarEntradas"
-          class="bg-gray-800 border border-gray-700 text-gray-300 text-sm rounded-lg px-3 py-2 focus:outline-none focus:border-blue-500 cursor-pointer"
+          class="bg-white border border-gray-200 text-gray-700 text-sm rounded-lg px-3 py-2 focus:outline-none focus:border-blue-500 cursor-pointer"
         >
           <option value="local">Motor: Local</option>
-          <option value="cloud">Motor: Cloud</option>
         </select>
         <button
           @click="cargarEntradas"
           :disabled="cargando"
-          class="flex items-center gap-2 px-4 py-2 bg-gray-700 hover:bg-gray-600 text-gray-300 text-sm rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          class="flex items-center gap-2 px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-600 text-sm rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
         >
           <Icon icon="mdi:refresh" :class="{ 'animate-spin': cargando }" class="text-lg" />
           Recargar
@@ -43,38 +42,38 @@
         v-model="textoBusqueda"
         type="text"
         placeholder="Buscar por pregunta..."
-        class="w-full bg-gray-800 border border-gray-700 text-gray-200 text-sm rounded-lg pl-10 pr-4 py-2.5 focus:outline-none focus:border-blue-500 placeholder-gray-500"
+        class="w-full bg-white border border-gray-200 text-gray-800 text-sm rounded-lg pl-10 pr-4 py-2.5 focus:outline-none focus:border-blue-500 placeholder-gray-400"
       />
     </div>
 
-    <div class="bg-gray-800 border border-gray-700 rounded-xl overflow-hidden shadow-lg">
+    <div class="bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm">
       <div class="overflow-x-auto">
         <table class="w-full text-sm">
           <thead>
-            <tr class="border-b border-gray-700 bg-gray-800/80">
-              <th class="text-left px-4 py-3 text-gray-400 font-semibold">Pregunta</th>
-              <th class="text-left px-4 py-3 text-gray-400 font-semibold hidden md:table-cell">Vista previa</th>
-              <th class="text-left px-4 py-3 text-gray-400 font-semibold hidden lg:table-cell">Documento origen</th>
-              <th class="text-left px-4 py-3 text-gray-400 font-semibold hidden sm:table-cell whitespace-nowrap">Fecha</th>
-              <th class="text-right px-4 py-3 text-gray-400 font-semibold">Acciones</th>
+            <tr class="border-b border-gray-200 bg-gray-50">
+              <th class="text-left px-4 py-3 text-gray-500 font-semibold">Pregunta</th>
+              <th class="text-left px-4 py-3 text-gray-500 font-semibold hidden md:table-cell">Vista previa</th>
+              <th class="text-left px-4 py-3 text-gray-500 font-semibold hidden lg:table-cell">Documento origen</th>
+              <th class="text-left px-4 py-3 text-gray-500 font-semibold hidden sm:table-cell whitespace-nowrap">Fecha</th>
+              <th class="text-right px-4 py-3 text-gray-500 font-semibold">Acciones</th>
             </tr>
           </thead>
           <tbody>
 
             <template v-if="cargando">
-              <tr v-for="i in 3" :key="`sk-${i}`" class="border-b border-gray-700/50">
-                <td class="px-4 py-3"><div class="h-4 bg-gray-700 rounded animate-pulse w-3/4"></div></td>
-                <td class="px-4 py-3 hidden md:table-cell"><div class="h-4 bg-gray-700 rounded animate-pulse w-2/3"></div></td>
-                <td class="px-4 py-3 hidden lg:table-cell"><div class="h-4 bg-gray-700 rounded animate-pulse w-1/2"></div></td>
-                <td class="px-4 py-3 hidden sm:table-cell"><div class="h-4 bg-gray-700 rounded animate-pulse w-24"></div></td>
-                <td class="px-4 py-3"><div class="h-4 bg-gray-700 rounded animate-pulse w-16 ml-auto"></div></td>
+              <tr v-for="i in 3" :key="`sk-${i}`" class="border-b border-gray-100">
+                <td class="px-4 py-3"><div class="h-4 bg-gray-200 rounded animate-pulse w-3/4"></div></td>
+                <td class="px-4 py-3 hidden md:table-cell"><div class="h-4 bg-gray-200 rounded animate-pulse w-2/3"></div></td>
+                <td class="px-4 py-3 hidden lg:table-cell"><div class="h-4 bg-gray-200 rounded animate-pulse w-1/2"></div></td>
+                <td class="px-4 py-3 hidden sm:table-cell"><div class="h-4 bg-gray-200 rounded animate-pulse w-24"></div></td>
+                <td class="px-4 py-3"><div class="h-4 bg-gray-200 rounded animate-pulse w-16 ml-auto"></div></td>
               </tr>
             </template>
 
             <tr v-else-if="entradas.length === 0">
               <td colspan="5" class="px-4 py-16 text-center">
                 <div class="flex flex-col items-center gap-3">
-                  <Icon icon="mdi:database-off-outline" class="text-gray-600 text-5xl" />
+                  <Icon icon="mdi:database-off-outline" class="text-gray-300 text-5xl" />
                   <p class="text-gray-500">No hay entradas en el caché</p>
                 </div>
               </td>
@@ -84,24 +83,24 @@
               v-else
               v-for="entrada in entradas"
               :key="entrada.clave"
-              class="border-b border-gray-700/50 hover:bg-gray-700/30 transition-colors"
+              class="border-b border-gray-100 hover:bg-gray-50 transition-colors"
             >
-              <td class="px-4 py-3 text-gray-200">{{ truncar(entrada.pregunta, 80) }}</td>
-              <td class="px-4 py-3 text-gray-400 hidden md:table-cell">{{ truncar(entrada.respuesta_preview, 60) }}</td>
-              <td class="px-4 py-3 text-gray-400 hidden lg:table-cell">{{ entrada.documento_origen }}</td>
-              <td class="px-4 py-3 text-gray-500 hidden sm:table-cell whitespace-nowrap">{{ formatearFecha(entrada.timestamp) }}</td>
+              <td class="px-4 py-3 text-gray-800">{{ truncar(entrada.pregunta, 80) }}</td>
+              <td class="px-4 py-3 text-gray-500 hidden md:table-cell">{{ truncar(entrada.respuesta_preview, 60) }}</td>
+              <td class="px-4 py-3 text-gray-500 hidden lg:table-cell">{{ entrada.documento_origen }}</td>
+              <td class="px-4 py-3 text-gray-400 hidden sm:table-cell whitespace-nowrap">{{ formatearFecha(entrada.timestamp) }}</td>
               <td class="px-4 py-3">
                 <div class="flex items-center justify-end gap-1">
                   <button
                     @click="abrirEdicion(entrada)"
-                    class="p-1.5 text-blue-400 hover:text-blue-300 hover:bg-blue-900/20 rounded-lg transition-colors"
+                    class="p-1.5 text-blue-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
                     title="Editar respuesta"
                   >
                     <Icon icon="mdi:pencil-outline" class="text-lg" />
                   </button>
                   <button
                     @click="pedirEliminacion(entrada)"
-                    class="p-1.5 text-red-400 hover:text-red-300 hover:bg-red-900/20 rounded-lg transition-colors"
+                    class="p-1.5 text-red-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
                     title="Eliminar entrada"
                   >
                     <Icon icon="mdi:delete-outline" class="text-lg" />
@@ -117,20 +116,20 @@
 
     <div
       v-if="modalEdicion.abierto"
-      class="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[100] px-4"
+      class="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-[100] px-4"
       @click.self="cerrarEdicion"
     >
-      <div class="bg-gray-800 border border-gray-700 rounded-2xl p-6 w-full max-w-2xl shadow-2xl">
+      <div class="bg-white border border-gray-200 rounded-2xl p-6 w-full max-w-2xl shadow-xl">
 
         <div class="flex items-center justify-between mb-5">
-          <h3 class="text-lg font-semibold text-white flex items-center gap-2">
+          <h3 class="text-lg font-semibold text-gray-800 flex items-center gap-2">
             <Icon icon="mdi:pencil-outline" class="text-blue-400 text-xl" />
             Editar respuesta
           </h3>
           <button
             @click="cerrarEdicion"
             :disabled="modalEdicion.guardando"
-            class="text-gray-500 hover:text-gray-300 transition-colors disabled:opacity-50"
+            class="text-gray-400 hover:text-gray-700 transition-colors disabled:opacity-50"
           >
             <Icon icon="mdi:close" class="text-xl" />
           </button>
@@ -143,7 +142,7 @@
         <template v-else>
           <div class="mb-4">
             <p class="text-xs text-gray-500 uppercase tracking-wide font-semibold mb-1.5">Pregunta (referencia)</p>
-            <p class="text-gray-400 text-sm bg-gray-900/50 rounded-lg px-3 py-2.5 border border-gray-700 leading-relaxed">
+            <p class="text-gray-500 text-sm bg-gray-50 rounded-lg px-3 py-2.5 border border-gray-200 leading-relaxed">
               {{ modalEdicion.pregunta }}
             </p>
           </div>
@@ -155,7 +154,7 @@
             <textarea
               v-model="modalEdicion.nuevaRespuesta"
               rows="8"
-              class="w-full bg-gray-700 border border-gray-600 text-gray-200 text-sm rounded-lg px-3 py-2.5 focus:outline-none focus:border-blue-500 resize-y placeholder-gray-500"
+              class="w-full bg-gray-50 border border-gray-300 text-gray-800 text-sm rounded-lg px-3 py-2.5 focus:outline-none focus:border-blue-500 resize-y placeholder-gray-400"
               placeholder="Escribe la respuesta corregida..."
             ></textarea>
           </div>
@@ -164,7 +163,7 @@
             <button
               @click="cerrarEdicion"
               :disabled="modalEdicion.guardando"
-              class="flex-1 py-2.5 bg-gray-700 hover:bg-gray-600 text-gray-300 text-sm font-medium rounded-lg transition-colors disabled:opacity-50"
+              class="flex-1 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-600 text-sm font-medium rounded-lg transition-colors disabled:opacity-50"
             >
               Cancelar
             </button>
@@ -174,7 +173,7 @@
               class="flex-1 flex justify-center items-center gap-2 py-2.5 bg-blue-600 hover:bg-blue-500 text-white text-sm font-semibold rounded-lg transition-colors disabled:opacity-50"
             >
               <Icon v-if="modalEdicion.guardando" icon="mdi:loading" class="animate-spin text-lg" />
-              Guardar cambios
+              Guardar
             </button>
           </div>
         </template>
@@ -212,7 +211,7 @@ import {
 import type { EntradaResumen } from '@/services/backendService'
 
 const authStore      = useAuthStore()
-const motorLlm       = ref<'local' | 'cloud'>('local')
+const motorLlm       = ref<'local' /* | 'cloud' */>('local') // DISABLED: cloud mode
 const textoBusqueda  = ref('')
 const entradas       = ref<EntradaResumen[]>([])
 const cargando       = ref(false)

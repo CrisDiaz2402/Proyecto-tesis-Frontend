@@ -1,11 +1,10 @@
-<!-- src/components/config/TabRagParams.vue -->
 <template>
   <div>
 
     <div class="mb-6">
-      <h2 class="text-base font-semibold text-white">Parámetros RAG Esenciales</h2>
-      <p class="text-gray-400 text-sm mt-1">
-        Solo los 4 parámetros que realmente afectan la calidad del retrieval. El resto se maneja automáticamente con valores optimizados.
+      <h2 class="text-base font-semibold text-gray-800">Parámetros de Búsqueda</h2>
+      <p class="text-gray-500 text-sm mt-1">
+        Solo los 4 parámetros que realmente afectan la calidad de la búsqueda. El resto se maneja automáticamente con valores optimizados.
       </p>
     </div>
 
@@ -58,11 +57,11 @@
         </div>
       </div>
 
-      <div class="bg-gray-800 border border-gray-700 rounded-xl overflow-hidden">
-        <div class="px-5 py-3.5 border-b border-gray-700 flex items-center gap-2.5 bg-blue-500/5">
-          <div class="w-2 h-2 rounded-full bg-blue-400 shrink-0"></div>
-          <span class="text-xs font-bold text-blue-300 uppercase tracking-wider">Parámetros Esenciales</span>
-          <span class="text-xs text-gray-500 ml-1">— los únicos que afectan significativamente la calidad RAG</span>
+      <div class="bg-white border border-gray-200 rounded-xl overflow-hidden">
+        <div class="px-5 py-3.5 border-b border-gray-200 flex items-center gap-2.5 bg-blue-50">
+          <div class="w-2 h-2 rounded-full bg-blue-500 shrink-0"></div>
+          <span class="text-xs font-bold text-blue-600 uppercase tracking-wider">Parámetros Esenciales</span>
+          <span class="text-xs text-gray-500 ml-1">— los únicos que afectan significativamente la calidad de búsqueda</span>
         </div>
 
         <div class="p-5 grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-6">
@@ -98,26 +97,26 @@
         </div>
       </div>
 
-      <div class="bg-gray-800 border border-gray-700 rounded-xl p-6 space-y-4">
+      <div class="bg-white border border-gray-200 rounded-xl p-6 space-y-4">
         <div class="flex items-start justify-between gap-4">
           <div>
-            <h3 class="text-white font-semibold flex items-center gap-2">
-              <Icon icon="mdi:text-box-edit-outline" class="text-green-400" />
+            <h3 class="text-gray-800 font-semibold flex items-center gap-2">
+              <Icon icon="mdi:text-box-edit-outline" class="text-green-500" />
               Prompt Principal
             </h3>
-            <p class="text-gray-400 text-sm mt-1">
+            <p class="text-gray-500 text-sm mt-1">
               Instrucción principal que recibe el LLM junto con el contexto recuperado y la pregunta.
               Debe incluir los placeholders
-              <code class="bg-gray-700 px-1 rounded text-green-300">{contexto}</code> y
-              <code class="bg-gray-700 px-1 rounded text-green-300">{pregunta}</code>.
+              <code class="bg-gray-100 px-1 rounded text-green-700">{contexto}</code> y
+              <code class="bg-gray-100 px-1 rounded text-green-700">{pregunta}</code>.
             </p>
           </div>
           <span
             :class="[
               'shrink-0 text-xs font-medium px-2.5 py-1 rounded-full border',
               estadoPrompt === 'personalizado'
-                ? 'bg-violet-900/30 border-violet-600/50 text-violet-300'
-                : 'bg-gray-700/50 border-gray-600 text-gray-400',
+                ? 'bg-violet-50 border-violet-300 text-violet-700'
+                : 'bg-gray-100 border-gray-200 text-gray-500',
             ]"
           >
             {{ estadoPrompt === 'personalizado' ? 'Personalizado' : 'Por defecto' }}
@@ -128,88 +127,112 @@
           v-model="promptPrincipal"
           rows="10"
           :placeholder="placeholderPrompt"
-          class="w-full bg-gray-900 border border-gray-600 rounded-lg px-4 py-3 text-gray-200 text-sm
+          :maxlength="promptLimites?.max_chars ?? 3100"
+          @input="limitarEntrada"
+          class="w-full bg-gray-50 border border-gray-300 rounded-lg px-4 py-3 text-gray-800 text-sm
                  font-mono leading-relaxed resize-y focus:outline-none focus:border-green-500
-                 placeholder:text-gray-600 transition-colors"
+                 placeholder:text-gray-400 transition-colors"
+          :class="{ 'border-red-400 focus:border-red-400': charCount > 0 && !promptValido }"
         />
 
-        <div class="flex items-center justify-between">
-          <p class="text-gray-500 text-xs">
-            {{ promptPrincipal.length }} caracteres
-            <span v-if="promptPrincipal.length > 0 && promptPrincipal.length < 50" class="text-amber-400 ml-1">
-              — mínimo 50 caracteres
-            </span>
-          </p>
-          <div class="flex gap-2">
-            <button
-              v-if="estadoPrompt === 'personalizado'"
-              @click="resetearPrompt"
-              :disabled="guardandoPrompt"
-              class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium
-                     text-gray-400 hover:text-white hover:bg-gray-700 transition-all disabled:opacity-50"
-            >
-              <Icon icon="mdi:restore" />
-              Restaurar defecto
-            </button>
-            <button
-              @click="guardarPrompt"
-              :disabled="guardandoPrompt || !puedoGuardarPrompt"
-              class="flex items-center gap-1.5 px-4 py-1.5 rounded-lg text-xs font-semibold
-                     bg-green-600 hover:bg-green-500 text-white transition-all
-                     disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              <Icon v-if="guardandoPrompt" icon="mdi:loading" class="animate-spin" />
-              <Icon v-else icon="mdi:content-save-outline" />
-              Guardar Prompt
-            </button>
+        <div class="mt-2 space-y-1">
+          <div class="w-full h-1.5 bg-gray-200 rounded-full overflow-hidden">
+            <div
+              class="h-full rounded-full transition-all duration-200"
+              :class="colorBarra"
+              :style="{ width: porcentajeUso + '%' }"
+            />
           </div>
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-2">
+              <span
+                v-if="charsRestantes < 200 && charsRestantes > 0 && charCount > 0"
+                class="inline-flex items-center gap-1 text-xs font-medium px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 border border-amber-300"
+              >
+                <Icon icon="mdi:alert-outline" class="text-sm" />
+                Quedan {{ charsRestantes }} caracteres
+              </span>
+              <span
+                v-else-if="charsRestantes <= 0"
+                class="inline-flex items-center gap-1 text-xs font-medium px-2 py-0.5 rounded-full bg-red-100 text-red-700 border border-red-300"
+              >
+                <Icon icon="mdi:block-helper" class="text-sm" />
+                Límite alcanzado
+              </span>
+            </div>
+            <p class="text-gray-400 text-xs text-right">
+              {{ charCount }} / {{ promptLimites?.max_chars ?? 3100 }} caracteres
+            </p>
+          </div>
+          <p v-if="mensajeValidacionPrompt" class="flex items-center gap-1 text-xs text-red-500">
+            <Icon icon="mdi:alert-circle" class="shrink-0" />
+            {{ mensajeValidacionPrompt }}
+          </p>
         </div>
-      </div>
 
-      <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between pt-2 pb-4">
+        <div v-if="promptLimites?.suffix_fijo" class="mt-3 rounded-lg bg-gray-50 border border-gray-200 overflow-hidden">
+          <div class="px-3 py-2 bg-gray-100 border-b border-gray-200 flex items-center gap-2">
+            <Icon icon="mdi:code-braces" class="text-gray-400 text-sm" />
+            <span class="text-xs font-semibold text-gray-500 uppercase tracking-wide">Sufijo automático (no editable)</span>
+            <span class="ml-auto text-xs text-gray-400">{{ promptLimites.suffix_fijo_chars }} caracteres</span>
+          </div>
+          <pre class="px-3 py-2.5 text-xs text-gray-400 font-mono whitespace-pre-wrap leading-relaxed overflow-x-auto">{{ promptLimites.suffix_fijo }}</pre>
+        </div>
 
-        <button
-          @click="confirmarReset = true"
-          :disabled="guardando || reseteando"
-          class="flex items-center gap-2 px-4 py-2.5 bg-gray-700 hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed text-gray-300 text-sm font-semibold rounded-lg transition-colors"
-        >
-          <Icon icon="mdi:restore" class="text-lg" />
-          Restablecer valores por defecto
-        </button>
+        <p class="flex items-start gap-1.5 text-xs text-gray-400 mt-2">
+          <Icon icon="mdi:information-outline" class="shrink-0 mt-0.5" />
+          <span>
+            El límite es de <strong class="text-gray-500">{{ promptLimites?.max_chars ?? 3100 }} caracteres</strong>.
+            El modelo tiene un contexto máximo de {{ promptLimites?.max_tokens_modelo ?? 2048 }} tokens,
+            de los cuales 512 se reservan para la respuesta y ~630 para el contexto RAG recuperado.
+          </span>
+        </p>
 
-        <button
-          @click="guardar"
-          :disabled="guardando || reseteando || hayErrores"
-          class="flex items-center gap-2 px-6 py-2.5 bg-blue-600 hover:bg-blue-500 disabled:bg-gray-700 disabled:text-gray-500 text-white text-sm font-semibold rounded-lg shadow-lg shadow-blue-900/20 transition-all"
-        >
-          <Icon v-if="guardando" icon="mdi:loading" class="animate-spin text-lg" />
-          <Icon v-else icon="mdi:content-save-outline" class="text-lg" />
-          {{ guardando ? 'Guardando...' : 'Guardar Cambios' }}
-        </button>
-
+        <div class="flex items-center justify-end mt-2">
+          <span
+            v-if="promptCambiado"
+            class="inline-flex items-center gap-1 text-xs font-medium px-2.5 py-1 rounded-full bg-amber-50 border border-amber-300 text-amber-700"
+          >
+            <span class="text-amber-500">•</span>
+            Cambios sin guardar
+          </span>
+          <span
+            v-else-if="estadoPrompt === 'personalizado'"
+            class="inline-flex items-center gap-1 text-xs font-medium px-2.5 py-1 rounded-full bg-green-50 border border-green-300 text-green-700"
+          >
+            <Icon icon="mdi:check" class="text-sm" />
+            Guardado
+          </span>
+          <span
+            v-else
+            class="inline-flex items-center gap-1 text-xs font-medium px-2.5 py-1 rounded-full bg-gray-100 border border-gray-200 text-gray-500"
+          >
+            Por defecto
+          </span>
+        </div>
       </div>
 
     </div>
 
     <div
       v-if="confirmarReset"
-      class="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+      class="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 p-4"
       @click.self="confirmarReset = false"
     >
-      <div class="bg-gray-800 border border-gray-700 rounded-2xl p-6 w-full max-w-sm shadow-2xl">
+      <div class="bg-white border border-gray-200 rounded-2xl p-6 w-full max-w-sm shadow-xl">
         <div class="flex items-center gap-3 mb-4">
-          <Icon icon="mdi:restore" class="text-amber-400 text-2xl" />
-          <h3 class="text-white font-semibold">Restablecer valores por defecto</h3>
+          <Icon icon="mdi:restore" class="text-amber-500 text-2xl" />
+          <h3 class="text-gray-800 font-semibold">Restablecer</h3>
         </div>
-        <p class="text-gray-400 text-sm mb-6 leading-relaxed">
-          Se restaurarán <strong class="text-white">todos</strong> los parámetros RAG a sus valores originales.
+        <p class="text-gray-500 text-sm mb-6 leading-relaxed">
+          Se restaurarán <strong class="text-gray-800">todos</strong> los parámetros de búsqueda a sus valores originales.
           El sistema ejecutará la limpieza automática de caché que corresponda.
         </p>
         <div class="flex gap-3">
           <button
             @click="confirmarReset = false"
             :disabled="reseteando"
-            class="flex-1 py-2.5 bg-gray-700 hover:bg-gray-600 text-gray-300 text-sm font-medium rounded-lg transition-colors disabled:opacity-50"
+            class="flex-1 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-600 text-sm font-medium rounded-lg transition-colors disabled:opacity-50"
           >
             Cancelar
           </button>
@@ -236,9 +259,9 @@ import {
   obtenerRagParams,
   actualizarRagParams,
   resetearRagParams,
-  actualizarPrompts,
   type RagParams,
   type ParamLimit,
+  type PromptLimites,
 } from '@/services/backendService'
 import RagParamInput from '@/components/config/RagParamInput.vue'
 
@@ -255,10 +278,12 @@ const limites  = ref<Record<keyof RagParams, ParamLimit> | null>(null)
 const advertencias    = ref<string[]>([])
 const accionesLimpieza = ref<string[]>([])
 
-const guardandoPrompt = ref(false)
+const originalForm    = ref<RagParams | null>(null)
+const originalPrompt  = ref('')
 const promptPrincipal = ref('')
 const defaultPrompt   = ref('')
 const placeholderPrompt = 'Escribe aquí el prompt principal…'
+const promptLimites   = ref<PromptLimites | null>(null)
 
 const erroresValidacion = ref<Record<string, boolean>>({})
 
@@ -274,11 +299,47 @@ const estadoPrompt = computed<'defecto' | 'personalizado'>(() =>
   promptPrincipal.value.trim() !== defaultPrompt.value.trim() ? 'personalizado' : 'defecto'
 )
 
-const puedoGuardarPrompt = computed(() => {
-  const t = promptPrincipal.value.trim()
-  if (t.length === 0) return true 
-  return t.length >= 50 && t.includes('{contexto}') && t.includes('{pregunta}')
+const charCount = computed(() => promptPrincipal.value.length)
+const charsRestantes = computed(() => (promptLimites.value?.max_chars ?? 3100) - charCount.value)
+const porcentajeUso = computed(() => Math.min(100, (charCount.value / (promptLimites.value?.max_chars ?? 3100)) * 100))
+
+const promptValido = computed(() => {
+  const len = charCount.value
+  if (len === 0) return true
+  const min = promptLimites.value?.min_chars ?? 50
+  const max = promptLimites.value?.max_chars ?? 3100
+  return len >= min && len <= max
 })
+
+const mensajeValidacionPrompt = computed(() => {
+  const len = charCount.value
+  if (len === 0) return ''
+  const min = promptLimites.value?.min_chars ?? 50
+  const max = promptLimites.value?.max_chars ?? 3100
+  if (len < min) return `Mínimo ${min} caracteres (faltan ${min - len})`
+  if (len > max) return `Límite superado: máximo ${max} caracteres. El modelo no puede procesar prompts más largos.`
+  return ''
+})
+
+const colorBarra = computed(() => {
+  const pct = porcentajeUso.value
+  if (pct >= 100) return 'bg-red-500'
+  if (pct >= 85) return 'bg-amber-500'
+  if (pct >= 70) return 'bg-yellow-400'
+  return 'bg-green-500'
+})
+
+const parametrosCambiados = computed(() => {
+  if (!form.value || !originalForm.value) return false
+  return form.value.umbral_relevancia_local !== originalForm.value.umbral_relevancia_local ||
+         form.value.rag_k_local !== originalForm.value.rag_k_local
+})
+
+const promptCambiado = computed(() =>
+  promptPrincipal.value.trim() !== originalPrompt.value.trim()
+)
+
+const hayCambios = computed(() => parametrosCambiados.value || promptCambiado.value)
 
 async function cargar() {
   cargando.value  = true
@@ -290,6 +351,9 @@ async function cargar() {
     limites.value  = res.limites
     defaultPrompt.value   = res.prompts_default_texto?.prompt_principal ?? ''
     promptPrincipal.value = res.parametros_actuales.prompt_principal ?? defaultPrompt.value
+    promptLimites.value   = res.prompt_limites ?? null
+    originalForm.value    = { ...res.parametros_actuales }
+    originalPrompt.value  = res.parametros_actuales.prompt_principal ?? defaultPrompt.value
   } catch (e: any) {
     errorCarga.value = e.message || 'Error desconocido al conectar con el servidor.'
   } finally {
@@ -303,10 +367,14 @@ function registrarError(campo: string, tieneError: boolean) {
   erroresValidacion.value[campo] = tieneError
 }
 
-async function guardar() {
+async function guardarTodo() {
   if (!form.value) return
   if (hayErrores.value) {
     toast.error('Corrige los errores de validación antes de guardar.')
+    return
+  }
+  if (promptCambiado.value && !promptValido.value && promptPrincipal.value.trim().length > 0) {
+    toast.error('El prompt no cumple con los requisitos de longitud.')
     return
   }
 
@@ -315,24 +383,36 @@ async function guardar() {
   accionesLimpieza.value = []
 
   try {
-    const res = await actualizarRagParams(form.value)
-    form.value = { ...res.parametros_actuales }
+    const payload: any = {}
 
-    if (res.advertencias?.length) {
-      advertencias.value = res.advertencias
+    if (parametrosCambiados.value) {
+      payload.umbral_relevancia_local = form.value.umbral_relevancia_local
+      payload.rag_k_local = form.value.rag_k_local
     }
-    if (res.acciones_limpieza?.length) {
-      accionesLimpieza.value = res.acciones_limpieza
+
+    if (promptCambiado.value) {
+      payload.prompt_principal = promptPrincipal.value
     }
+
+    const res = await actualizarRagParams(payload)
+
+    form.value = { ...res.parametros_actuales }
+    originalForm.value = { ...res.parametros_actuales }
+    const promptActualizado = (res.parametros_actuales as any).prompt_principal
+    promptPrincipal.value = promptActualizado ?? promptPrincipal.value
+    originalPrompt.value = promptPrincipal.value
+
+    if (res.advertencias?.length) advertencias.value = res.advertencias
+    if (res.acciones_limpieza?.length) accionesLimpieza.value = res.acciones_limpieza
 
     const cambiados = res.params_cambiados?.length ?? 0
     if (cambiados > 0) {
-      toast.success(`${cambiados} parámetro(s) actualizado(s) correctamente.`)
+      toast.success(`${cambiados} cambio(s) guardado(s) correctamente.`)
     } else {
       toast.info('No se detectaron cambios respecto a los valores actuales.')
     }
   } catch (e: any) {
-    toast.error(e.message || 'Error al guardar los parámetros RAG.')
+    toast.error(e.message || 'Error al guardar.')
   } finally {
     guardando.value = false
   }
@@ -346,9 +426,12 @@ async function resetear() {
   try {
     const res = await resetearRagParams()
     form.value     = { ...res.parametros_actuales }
+    originalForm.value = { ...res.parametros_actuales }
     defaults.value = { ...res.defaults }
     confirmarReset.value = false
     erroresValidacion.value = {}
+    promptPrincipal.value = defaultPrompt.value
+    originalPrompt.value  = defaultPrompt.value
 
     if (res.advertencias?.length) {
       advertencias.value = res.advertencias
@@ -365,31 +448,14 @@ async function resetear() {
   }
 }
 
-async function guardarPrompt() {
-  if (!puedoGuardarPrompt.value) return
-  
-  guardandoPrompt.value = true
-  try {
-    const res = await actualizarPrompts({ prompt_principal: promptPrincipal.value })
-    promptPrincipal.value = res.parametros_actuales.prompt_principal ?? defaultPrompt.value
-    toast.success('Prompt guardado correctamente.')
-  } catch (e: any) {
-    toast.error(e.message ?? 'Error al guardar el prompt.')
-  } finally {
-    guardandoPrompt.value = false
+function limitarEntrada(event: Event) {
+  const max = promptLimites.value?.max_chars ?? 3100
+  const el = event.target as HTMLTextAreaElement
+  if (el.value.length > max) {
+    el.value = el.value.slice(0, max)
+    promptPrincipal.value = el.value
   }
 }
 
-async function resetearPrompt() {
-  guardandoPrompt.value = true
-  try {
-    await actualizarPrompts({ prompt_principal: '' })
-    promptPrincipal.value = defaultPrompt.value
-    toast.success('Prompt restaurado al valor por defecto.')
-  } catch (e: any) {
-    toast.error(e.message ?? 'Error al restaurar el prompt.')
-  } finally {
-    guardandoPrompt.value = false
-  }
-}
+defineExpose({ guardarTodo, guardando, reseteando, hayErrores, hayCambios, confirmarReset, cargando })
 </script>

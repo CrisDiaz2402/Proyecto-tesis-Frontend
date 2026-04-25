@@ -1,23 +1,23 @@
 <template>
   <div
     v-if="isOpen"
-    class="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[100] px-4"
+    class="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-[100] px-4"
     @click.self="cancelar"
   >
-    <div class="bg-gray-800 border border-gray-700 rounded-2xl p-6 w-full max-w-sm shadow-2xl animate-pop-in">
+    <div class="bg-white border border-gray-200 rounded-2xl p-6 w-full max-w-sm shadow-xl animate-pop-in">
       
       <div class="flex items-center justify-between mb-4">
-        <h3 class="text-lg font-semibold text-white flex items-center gap-2">
+          <h3 class="text-lg font-semibold text-gray-800 flex items-center gap-2">
           <Icon v-if="isDestructive" icon="mdi:alert-circle-outline" class="text-red-500 text-xl" />
           <Icon v-else icon="mdi:help-circle-outline" class="text-blue-500 text-xl" />
           {{ title }}
         </h3>
-        <button @click="cancelar" :disabled="isLoading" class="text-gray-500 hover:text-gray-300 transition-colors disabled:opacity-50">
+        <button @click="cancelar" :disabled="isLoading" class="text-gray-400 hover:text-gray-700 transition-colors disabled:opacity-50">
           <Icon icon="mdi:close" class="text-xl" />
         </button>
       </div>
 
-      <p class="text-gray-400 text-sm mb-6 whitespace-pre-wrap leading-relaxed">
+      <p class="text-gray-500 text-sm mb-6 whitespace-pre-wrap leading-relaxed">
         {{ message }}
       </p>
 
@@ -25,7 +25,7 @@
         <button
           @click="cancelar"
           :disabled="isLoading"
-          class="flex-1 py-2.5 bg-gray-700 hover:bg-gray-600 text-gray-300 text-sm font-medium rounded-lg transition-colors disabled:opacity-50"
+          class="flex-1 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-600 text-sm font-medium rounded-lg transition-colors disabled:opacity-50"
         >
           {{ cancelText }}
         </button>

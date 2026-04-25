@@ -1,4 +1,3 @@
-// src/router/index.ts
 import { createRouter, createWebHistory } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { hayTokenGuardado } from '@/services/authService'
@@ -51,11 +50,6 @@ const router = createRouter({
           path: 'users',
           name: 'admin-users',
           component: () => import('@/views/UsersView.vue'),
-        },
-        {
-          path: 'nlu',
-          name: 'admin-nlu',
-          component: () => import('@/views/NluConfigView.vue'),
         },
       ],
     },

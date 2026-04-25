@@ -1,4 +1,3 @@
-// src/stores/avatar.ts
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 

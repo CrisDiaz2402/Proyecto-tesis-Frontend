@@ -1,4 +1,3 @@
-// src/composables/useSpeech.ts
 import { ref, onMounted } from 'vue'
 import { useAvatarStore } from '@/stores/avatar'
 
@@ -15,7 +14,7 @@ export function useSpeech() {
 
   onMounted(() => {
     if (!('speechSynthesis' in window)) {
-      console.warn('[useSpeech] SpeechSynthesis no está soportado en este navegador.')
+      console.warn('[useSpeech] SpeechSynthesis not supported')
     } else {
       synthRef.value = window.speechSynthesis
       soportaSynthesis.value = true
@@ -24,7 +23,7 @@ export function useSpeech() {
         try {
           vocesDisponibles = synthRef.value!.getVoices()
         } catch (e) {
-          console.error('[useSpeech] Error al cargar voces:', e)
+          console.error('[useSpeech] load voices error:', e)
           vocesDisponibles = []
         }
       }
@@ -40,7 +39,7 @@ export function useSpeech() {
       (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition
 
     if (!SpeechRecognition) {
-      console.warn('[useSpeech] SpeechRecognition no está soportado en este navegador.')
+      console.warn('[useSpeech] SpeechRecognition not supported')
     } else {
       soportaRecognition.value = true
       try {
@@ -56,7 +55,7 @@ export function useSpeech() {
         }
 
         recognition.onerror = (event: any) => {
-          console.error('[useSpeech] Error de reconocimiento de voz:', event.error)
+          console.error('[useSpeech] recognition error:', event.error)
           store.setEscuchando(false)
         }
 
@@ -66,7 +65,7 @@ export function useSpeech() {
           }
         }
       } catch (e) {
-        console.error('[useSpeech] Error al inicializar SpeechRecognition:', e)
+        console.error('[useSpeech] init error:', e)
         recognition = null
         soportaRecognition.value = false
       }
@@ -75,7 +74,7 @@ export function useSpeech() {
 
   function hablar(texto: string): void {
     if (!soportaSynthesis.value || !synthRef.value) {
-      console.warn('[useSpeech] SpeechSynthesis no disponible.')
+      console.warn('[useSpeech] synthesis unavailable')
       return
     }
 
@@ -95,20 +94,20 @@ export function useSpeech() {
       utterance.onstart = () => store.setHablando(true)
       utterance.onend   = () => store.setHablando(false)
       utterance.onerror = (e) => {
-        console.error('[useSpeech] Error al hablar:', e)
+        console.error('[useSpeech] speak error:', e)
         store.setHablando(false)
       }
 
       synthRef.value.speak(utterance)
     } catch (e) {
-      console.error('[useSpeech] Error inesperado en hablar():', e)
+      console.error('[useSpeech] hablar error:', e)
       store.setHablando(false)
     }
   }
 
   function iniciarEscucha(): (callback: (texto: string) => void) => void {
     if (!soportaRecognition.value || !recognition) {
-      console.warn('[useSpeech] SpeechRecognition no disponible.')
+      console.warn('[useSpeech] recognition unavailable')
       return () => {}
     }
 
@@ -119,7 +118,7 @@ export function useSpeech() {
     try {
       recognition.start()
     } catch (e) {
-      console.error('[useSpeech] Error al iniciar reconocimiento:', e)
+      console.error('[useSpeech] start error:', e)
       store.setEscuchando(false)
       return () => {}
     }
@@ -131,7 +130,7 @@ export function useSpeech() {
       try {
         recognition.stop()
       } catch (e) {
-        console.error('[useSpeech] Error al detener reconocimiento:', e)
+        console.error('[useSpeech] stop error:', e)
       }
 
       setTimeout(() => {
@@ -150,7 +149,7 @@ export function useSpeech() {
     try {
       recognition.stop()
     } catch (e) {
-      console.error('[useSpeech] Error al detener reconocimiento:', e)
+      console.error('[useSpeech] stop error:', e)
     }
 
     setTimeout(() => {
@@ -168,7 +167,7 @@ export function useSpeech() {
         store.setHablando(false)
       }
     } catch (e) {
-      console.error('[useSpeech] Error al interrumpir síntesis:', e)
+      console.error('[useSpeech] interrupt error:', e)
       store.setHablando(false)
     }
   }

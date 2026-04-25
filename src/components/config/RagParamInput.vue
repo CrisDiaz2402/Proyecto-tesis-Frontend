@@ -1,9 +1,8 @@
-<!-- src/components/config/RagParamInput.vue -->
 <template>
   <div class="flex flex-col gap-1.5">
 
     <div class="flex items-start">
-      <label :for="inputId" class="text-xs font-semibold text-gray-300 leading-tight">
+        <label :for="inputId" class="text-xs font-semibold text-gray-700 leading-tight">
         {{ label }}
       </label>
     </div>
@@ -22,11 +21,11 @@
           @input="onInput"
           @blur="onBlur"
           :class="[
-            'w-full px-3 py-2 bg-gray-900 border rounded-lg text-sm font-mono text-white',
+            'w-full px-3 py-2 bg-white border rounded-lg text-sm font-mono text-gray-800',
             'focus:outline-none focus:ring-1 transition-colors',
             errorMsg
               ? 'border-red-500 focus:ring-red-500'
-              : 'border-gray-600 focus:ring-blue-500 focus:border-blue-500',
+              : 'border-gray-300 focus:ring-blue-500 focus:border-blue-500',
           ]"
           :placeholder="String(valorDefault)"
         />

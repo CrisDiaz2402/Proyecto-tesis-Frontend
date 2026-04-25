@@ -1,5 +1,3 @@
-// src/services/backendService.ts
-
 import { BACKEND_URL } from '@/config/config'
 import { getAuthHeaders, limpiarSesion } from '@/services/authService'
 
@@ -37,7 +35,7 @@ export interface ChatResponse {
   respuesta: string
 }
 
-export type MotorTipo  = 'local' | 'cloud'
+export type MotorTipo  = 'local' /* | 'cloud' */ // DISABLED: cloud mode
 export type MotorScope = 'local'
 
 export interface ConfiguracionIA {
@@ -55,6 +53,7 @@ export const MODOS_IA = [
     icono:          'mdi:server-network',
     color:          'blue',
   },
+  /* DISABLED: cloud mode
   {
     id: 'local:cloud',
     motor_vectores: 'local'  as MotorTipo,
@@ -64,6 +63,7 @@ export const MODOS_IA = [
     icono:          'mdi:server-network',
     color:          'violet',
   },
+  */
 ]
 
 export interface RagParams {
@@ -80,6 +80,14 @@ export interface ParamLimit {
   descripcion: string
 }
 
+export interface PromptLimites {
+  min_chars: number
+  max_chars: number
+  suffix_fijo: string
+  suffix_fijo_chars: number
+  max_tokens_modelo: number
+}
+
 export interface RagParamsResponse {
   ok: boolean
   parametros_actuales: RagParams & {
@@ -91,6 +99,7 @@ export interface RagParamsResponse {
   prompts_default_texto: {
     prompt_principal: string
   }
+  prompt_limites: PromptLimites
 }
 
 export interface RagParamsUpdateResponse {

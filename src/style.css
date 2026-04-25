@@ -2,7 +2,6 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Aseguramos que la app ocupe toda la pantalla */
 html, body, #app {
   margin: 0;
   padding: 0;

@@ -1,7 +1,7 @@
 <template>
   <div class="flex flex-col gap-1.5">
 
-    <label v-if="label" class="text-xs font-semibold text-gray-300 leading-tight">
+    <label v-if="label" class="text-xs font-semibold text-gray-700 leading-tight">
       {{ label }}
       <span v-if="!required" class="text-gray-500 font-normal ml-1">(opcional)</span>
     </label>
@@ -10,8 +10,8 @@
 
     <div
       :class="[
-        'min-h-[42px] flex flex-wrap gap-1.5 px-3 py-2 bg-gray-900 border rounded-lg cursor-text transition-colors',
-        enfocado ? 'border-blue-500 ring-1 ring-blue-500' : 'border-gray-600',
+        'min-h-[42px] flex flex-wrap gap-1.5 px-3 py-2 bg-white border rounded-lg cursor-text transition-colors',
+        enfocado ? 'border-blue-500 ring-1 ring-blue-500' : 'border-gray-300',
         colorChip === 'red' ? 'focus-within:border-red-500 focus-within:ring-red-500' : '',
       ]"
       @click="focusInput"
@@ -41,7 +41,7 @@
         v-model="inputVal"
         type="text"
         :placeholder="modelValue.length === 0 ? placeholder : ''"
-        class="flex-1 min-w-[100px] bg-transparent text-sm text-white placeholder-gray-600 outline-none"
+        class="flex-1 min-w-[100px] bg-transparent text-sm text-gray-800 placeholder-gray-400 outline-none"
         @keydown.enter.prevent="agregar"
         @keydown.comma.prevent="agregar"
         @keydown.backspace="borrarUltimo"
@@ -50,9 +50,9 @@
       />
     </div>
 
-    <p class="text-[10px] text-gray-600">
-      Escribe y presiona <kbd class="px-1 py-0.5 bg-gray-800 border border-gray-600 rounded text-[9px]">Enter</kbd>
-      o <kbd class="px-1 py-0.5 bg-gray-800 border border-gray-600 rounded text-[9px]">,</kbd> para agregar
+    <p class="text-[10px] text-gray-500">
+      Escribe y presiona <kbd class="px-1 py-0.5 bg-gray-100 border border-gray-200 rounded text-[9px]">Enter</kbd>
+      o <kbd class="px-1 py-0.5 bg-gray-100 border border-gray-200 rounded text-[9px]">,</kbd> para agregar
     </p>
 
   </div>

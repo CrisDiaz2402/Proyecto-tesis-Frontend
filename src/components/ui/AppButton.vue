@@ -1,4 +1,3 @@
-<!-- src/components/ui/AppButton.vue -->
 <template>
   <button
     v-bind="$attrs"
@@ -33,7 +32,7 @@ const baseClasses = 'inline-flex items-center justify-center gap-2 font-semibold
 const variantClasses = computed(() => ({
   primary: 'bg-blue-600 hover:bg-blue-500 text-white',
   danger:  'bg-red-600  hover:bg-red-500  text-white',
-  ghost:   'bg-gray-700 hover:bg-gray-600 text-gray-300',
+  ghost:   'bg-gray-100 hover:bg-gray-200 text-gray-600',
   subtle:  'bg-blue-600/20 hover:bg-blue-600/40 text-blue-400 border border-blue-600/30',
 }[props.variant]))
 

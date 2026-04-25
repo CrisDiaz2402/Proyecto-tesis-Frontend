@@ -1,4 +1,3 @@
-// src/services/authService.ts
 import { BACKEND_URL } from '@/config/config'
 
 const TOKEN_KEY   = 'auth_token'

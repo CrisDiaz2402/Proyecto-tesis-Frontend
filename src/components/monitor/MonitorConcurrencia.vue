@@ -1,4 +1,3 @@
-<!-- src/components/monitor/MonitorConcurrencia.vue -->
 <template>
   <div class="flex flex-col gap-6">
 
@@ -6,25 +5,25 @@
       <div
         v-for="m in metricas"
         :key="m.label"
-        class="bg-gray-800 border border-gray-700 rounded-xl p-5 flex items-center gap-4"
+        class="bg-white border border-gray-200 rounded-xl p-5 flex items-center gap-4"
       >
         <div :class="`p-3 rounded-xl ${m.bg}`">
           <Icon :icon="m.icon" :class="`text-2xl ${m.color}`" />
         </div>
         <div>
-          <p class="text-2xl font-bold text-white font-mono">{{ m.value }}</p>
-          <p class="text-xs text-gray-400 mt-0.5">{{ m.label }}</p>
+          <p class="text-2xl font-bold text-gray-800 font-mono">{{ m.value }}</p>
+          <p class="text-xs text-gray-500 mt-0.5">{{ m.label }}</p>
         </div>
       </div>
     </div>
 
-    <div class="bg-gray-800 border border-gray-700 rounded-xl overflow-hidden">
-      <div class="px-6 py-4 border-b border-gray-700 flex items-center gap-2">
+    <div class="bg-white border border-gray-200 rounded-xl overflow-hidden">
+      <div class="px-6 py-4 border-b border-gray-200 flex items-center gap-2">
         <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shrink-0"></span>
-        <h3 class="text-sm font-semibold text-white uppercase tracking-wider">
+        <h3 class="text-sm font-semibold text-gray-800 uppercase tracking-wider">
           Usuarios conectados
         </h3>
-        <span class="ml-auto px-2 py-0.5 bg-gray-700 text-gray-400 text-xs rounded border border-gray-600">
+        <span class="ml-auto px-2 py-0.5 bg-gray-100 text-gray-500 text-xs rounded border border-gray-200">
           {{ estado.total_conexiones }} en línea
         </span>
       </div>
@@ -43,7 +42,7 @@
         >
           <Icon icon="mdi:account-circle-outline" class="text-emerald-400 text-xl shrink-0" />
           <div class="flex-1 min-w-0">
-            <p class="text-sm text-white font-medium truncate">{{ c.username }}</p>
+            <p class="text-sm text-gray-800 font-medium truncate">{{ c.username }}</p>
             <p class="text-[10px] text-gray-500 font-mono">{{ c.client_id }}</p>
           </div>
           <div class="text-right shrink-0">
@@ -60,13 +59,13 @@
       </div>
     </div>
 
-    <div class="bg-gray-800 border border-gray-700 rounded-xl overflow-hidden">
-      <div class="px-6 py-4 border-b border-gray-700 flex items-center gap-2">
+    <div class="bg-white border border-gray-200 rounded-xl overflow-hidden">
+      <div class="px-6 py-4 border-b border-gray-200 flex items-center gap-2">
         <span class="w-2 h-2 rounded-full bg-blue-500 animate-pulse shrink-0"></span>
-        <h3 class="text-sm font-semibold text-white uppercase tracking-wider">
+        <h3 class="text-sm font-semibold text-gray-800 uppercase tracking-wider">
           Consultas en proceso
         </h3>
-        <span class="ml-auto px-2 py-0.5 bg-gray-700 text-gray-400 text-xs rounded border border-gray-600">
+        <span class="ml-auto px-2 py-0.5 bg-gray-100 text-gray-500 text-xs rounded border border-gray-200">
           {{ estado.total_activas }} activa(s)
         </span>
       </div>
@@ -86,17 +85,17 @@
           <Icon icon="mdi:loading" class="animate-spin text-blue-400 shrink-0" />
           <span class="text-[10px] font-mono text-gray-400 shrink-0 w-20 truncate">{{ c.client_id }}</span>
           <span class="text-xs font-mono text-blue-300 shrink-0 w-16">{{ c.motor }}</span>
-          <span class="text-sm text-gray-200 flex-1 truncate">{{ c.pregunta }}</span>
+          <span class="text-sm text-gray-700 flex-1 truncate">{{ c.pregunta }}</span>
           <span class="text-xs text-blue-400 font-mono shrink-0">{{ tiempoTranscurrido(c.inicio) }}s</span>
         </div>
       </div>
     </div>
 
-    <div class="bg-gray-800 border border-gray-700 rounded-xl overflow-hidden">
-      <div class="px-6 py-4 border-b border-gray-700 flex items-center gap-2">
+    <div class="bg-white border border-gray-200 rounded-xl overflow-hidden">
+      <div class="px-6 py-4 border-b border-gray-200 flex items-center gap-2">
         <Icon icon="mdi:history" class="text-gray-400 text-lg" />
-        <h3 class="text-sm font-semibold text-white uppercase tracking-wider">Historial reciente</h3>
-        <span class="ml-auto px-2 py-0.5 bg-gray-700 text-gray-400 text-xs rounded border border-gray-600">
+        <h3 class="text-sm font-semibold text-gray-800 uppercase tracking-wider">Historial reciente</h3>
+        <span class="ml-auto px-2 py-0.5 bg-gray-100 text-gray-500 text-xs rounded border border-gray-200">
           últimas {{ estado.historial.length }}
         </span>
       </div>
@@ -108,19 +107,19 @@
       <div v-else class="overflow-x-auto">
         <table class="w-full text-left">
           <thead>
-            <tr class="bg-gray-900/50">
-              <th class="px-4 py-3 text-xs font-bold text-gray-400 uppercase tracking-wider">Usuario</th>
-              <th class="px-4 py-3 text-xs font-bold text-gray-400 uppercase tracking-wider">Motor</th>
-              <th class="px-4 py-3 text-xs font-bold text-gray-400 uppercase tracking-wider">Pregunta</th>
-              <th class="px-4 py-3 text-xs font-bold text-gray-400 uppercase tracking-wider text-right">Latencia</th>
-              <th class="px-4 py-3 text-xs font-bold text-gray-400 uppercase tracking-wider text-center">Caché</th>
+            <tr class="bg-gray-50">
+              <th class="px-4 py-3 text-xs font-bold text-gray-500 uppercase tracking-wider">Usuario</th>
+              <th class="px-4 py-3 text-xs font-bold text-gray-500 uppercase tracking-wider">Motor</th>
+              <th class="px-4 py-3 text-xs font-bold text-gray-500 uppercase tracking-wider">Pregunta</th>
+              <th class="px-4 py-3 text-xs font-bold text-gray-500 uppercase tracking-wider text-right">Latencia</th>
+              <th class="px-4 py-3 text-xs font-bold text-gray-500 uppercase tracking-wider text-center">Caché</th>
             </tr>
           </thead>
-          <tbody class="divide-y divide-gray-700">
+          <tbody class="divide-y divide-gray-100">
             <tr
               v-for="r in estado.historial"
               :key="r.id + r.fin"
-              class="hover:bg-gray-700/30 transition-colors"
+              class="hover:bg-gray-50 transition-colors"
             >
               <td class="px-4 py-3">
                 <span class="text-[10px] font-mono text-gray-400">{{ r.client_id }}</span>
@@ -130,9 +129,9 @@
                   {{ r.motor }}
                 </span>
               </td>
-              <td class="px-4 py-3 text-sm text-gray-300 max-w-xs truncate">{{ r.pregunta }}</td>
+              <td class="px-4 py-3 text-sm text-gray-700 max-w-xs truncate">{{ r.pregunta }}</td>
               <td class="px-4 py-3 text-right">
-                <span class="text-sm font-mono" :class="r.cache ? 'text-green-400' : 'text-gray-300'">
+                <span class="text-sm font-mono" :class="r.cache ? 'text-green-600' : 'text-gray-500'">
                   {{ r.latencia_ms }} ms
                 </span>
               </td>
