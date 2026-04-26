@@ -1,6 +1,15 @@
-export const BACKEND_URL = import.meta.env.VITE_BACKEND_URL as string
+const getBaseUrl = (): string => {
+  if (typeof window !== 'undefined') {
+    return window.location.origin
+  }
+  return ''
+}
 
-export const WS_BASE_URL = BACKEND_URL
+const BASE = getBaseUrl()
+
+export const BACKEND_URL = BASE
+
+export const WS_BASE_URL = BASE
   .replace(/^https/, 'wss')
   .replace(/^http/, 'ws')
 

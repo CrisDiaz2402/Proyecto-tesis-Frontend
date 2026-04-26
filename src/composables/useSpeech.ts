@@ -6,11 +6,14 @@ export function useSpeech() {
 
   const synthRef = ref<SpeechSynthesis | null>(null)
   let vocesDisponibles: SpeechSynthesisVoice[] = []
-  let recognition: any = null
-  let textoVozCapturado = ''
 
-  const soportaSynthesis  = ref(false)
+  const soportaSynthesis   = ref(false)
   const soportaRecognition = ref(false)
+
+  let SpeechRecognitionClass: any = null
+  let recognitionActiva: any = null
+  let textoFinal    = ''
+  let textoInterino = ''
 
   onMounted(() => {
     if (!('speechSynthesis' in window)) {
@@ -35,42 +38,52 @@ export function useSpeech() {
       }
     }
 
-    const SpeechRecognition =
+    SpeechRecognitionClass =
       (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition
 
-    if (!SpeechRecognition) {
+    if (!SpeechRecognitionClass) {
       console.warn('[useSpeech] SpeechRecognition not supported')
     } else {
       soportaRecognition.value = true
-      try {
-        recognition = new SpeechRecognition()
-        recognition.lang = 'es-EC'
-        recognition.continuous = true
-        recognition.interimResults = true
-
-        recognition.onresult = (event: any) => {
-          textoVozCapturado = Array.from(event.results)
-            .map((r: any) => r[0].transcript)
-            .join('')
-        }
-
-        recognition.onerror = (event: any) => {
-          console.error('[useSpeech] recognition error:', event.error)
-          store.setEscuchando(false)
-        }
-
-        recognition.onend = () => {
-          if (store.estaEscuchando) {
-            store.setEscuchando(false)
-          }
-        }
-      } catch (e) {
-        console.error('[useSpeech] init error:', e)
-        recognition = null
-        soportaRecognition.value = false
-      }
     }
   })
+
+  function crearRecognition(): any {
+    if (!SpeechRecognitionClass) return null
+
+    const r = new SpeechRecognitionClass()
+    r.lang            = 'es-EC'
+    r.continuous      = false
+    r.interimResults  = true
+    r.maxAlternatives = 1
+
+    r.onresult = (event: any) => {
+      textoFinal    = ''
+      textoInterino = ''
+      for (let i = 0; i < event.results.length; i++) {
+        const resultado = event.results[i]
+        if (resultado.isFinal) {
+          textoFinal += resultado[0].transcript
+        } else {
+          textoInterino += resultado[0].transcript
+        }
+      }
+    }
+
+    r.onerror = (event: any) => {
+      if (event.error === 'no-speech' || event.error === 'aborted') return
+      console.error('[useSpeech] recognition error:', event.error)
+      store.setEscuchando(false)
+    }
+
+    r.onend = () => {
+      if (store.estaEscuchando) {
+        store.setEscuchando(false)
+      }
+    }
+
+    return r
+  }
 
   function hablar(texto: string): void {
     if (!soportaSynthesis.value || !synthRef.value) {
@@ -106,20 +119,33 @@ export function useSpeech() {
   }
 
   function iniciarEscucha(): (callback: (texto: string) => void) => void {
-    if (!soportaRecognition.value || !recognition) {
+    if (!soportaRecognition.value) {
       console.warn('[useSpeech] recognition unavailable')
       return () => {}
     }
 
-    interrumpir() 
-    textoVozCapturado = ''
+    if (recognitionActiva) {
+      try { recognitionActiva.abort() } catch (_) {}
+      recognitionActiva = null
+    }
+
+    textoFinal    = ''
+    textoInterino = ''
     store.setEscuchando(true)
 
+    recognitionActiva = crearRecognition()
+
+    if (!recognitionActiva) {
+      store.setEscuchando(false)
+      return () => {}
+    }
+
     try {
-      recognition.start()
+      recognitionActiva.start()
     } catch (e) {
       console.error('[useSpeech] start error:', e)
       store.setEscuchando(false)
+      recognitionActiva = null
       return () => {}
     }
 
@@ -128,35 +154,39 @@ export function useSpeech() {
       store.setEscuchando(false)
 
       try {
-        recognition.stop()
+        recognitionActiva?.stop()
       } catch (e) {
         console.error('[useSpeech] stop error:', e)
       }
 
       setTimeout(() => {
-        if (textoVozCapturado.trim()) {
-          callback(textoVozCapturado.trim())
+        const capturado = (textoFinal || textoInterino).trim()
+        recognitionActiva = null
+        if (capturado) {
+          callback(capturado)
         }
-      }, 500)
+      }, 400)
     }
   }
 
   function detenerEscucha(callback?: (texto: string) => void): void {
-    if (!recognition || !store.estaEscuchando) return
+    if (!recognitionActiva || !store.estaEscuchando) return
 
     store.setEscuchando(false)
 
     try {
-      recognition.stop()
+      recognitionActiva.stop()
     } catch (e) {
       console.error('[useSpeech] stop error:', e)
     }
 
     setTimeout(() => {
-      if (textoVozCapturado.trim() && callback) {
-        callback(textoVozCapturado.trim())
+      const capturado = (textoFinal || textoInterino).trim()
+      recognitionActiva = null
+      if (capturado && callback) {
+        callback(capturado)
       }
-    }, 500)
+    }, 400)
   }
 
   function interrumpir(): void {
@@ -174,16 +204,16 @@ export function useSpeech() {
 
   function formatearTextoParaVoz(texto: string): string {
     return texto
-      .replace(/\*\*(.*?)\*\*/g, '$1')                           
-      .replace(/\*(.*?)\*/g, '$1')                                 
-      .replace(/#+\s/g, '')                                         
-      .replace(/[^\w\s.,;:!?ñÑáéíóúÁÉÍÓÚüÜ]/g, '')               
+      .replace(/\*\*(.*?)\*\*/g, '$1')
+      .replace(/\*(.*?)\*/g, '$1')
+      .replace(/#+\s/g, '')
+      .replace(/[^\w\s.,;:!?ñÑáéíóúÁÉÍÓÚüÜ]/g, '')
       .trim()
   }
 
   return {
-    estaHablando:     store.estaHablando,
-    estaEscuchando:   store.estaEscuchando,
+    estaHablando:      store.estaHablando,
+    estaEscuchando:    store.estaEscuchando,
     soportaSynthesis,
     soportaRecognition,
     hablar,
